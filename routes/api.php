@@ -11,24 +11,24 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 
-Route::post('/register', [UserAuthController::class, 'register']);
-Route::post('/login', [UserAuthController::class, 'login']);
-Route::post('/verify-mobile', [UserAuthController::class, 'verifyMobile']);
+// Route::post('/register', [UserAuthController::class, 'register']);
+// Route::post('/login', [UserAuthController::class, 'login']);
+// Route::post('/verify-mobile', [UserAuthController::class, 'verifyMobile']);
 
-Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/logout', [UserAuthController::class, 'logout']);
-});
+// Route::middleware('auth:sanctum')->group(function () {
+//     Route::post('/logout', [UserAuthController::class, 'logout']);
+// });
 
 
 
 Route::prefix('quiz')->group(function(){
     Route::get('/', [QuizController::class, 'index']);
-    Route::get('/list', [CategoryController::class, 'listQuizzes']);
+    Route::post('/create', [QuizController::class, 'store']);
+    Route::post('/submit', [QuizController::class, 'userResponse']);
 });
 
 
 Route::prefix('category')->group(function(){
     Route::get('/', [CategoryController::class, 'index']);
-    Route::get('/create', [CategoryController::class, 'store']);
-    Route::get('');
+    Route::post('/create', [CategoryController::class, 'store']);
 });
