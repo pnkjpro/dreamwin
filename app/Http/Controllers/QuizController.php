@@ -77,9 +77,26 @@ class QuizController extends Controller
         
     }
 
-    public function show(Quiz $quiz)
-    {
-        return response()->json($quiz, 200);
+    public function quizByNodeId(Request $request){
+        $nodeId = $request->node_id;
+        $quiz = Quiz::where('node_id', $nodeId)->first();
+        $quizResponse = collect($quiz->quizContents)->select('id','question', 'options');
+        // $quizResponse = collect($quiz->quizContents);
+        $quizResponse = $quizResponse->where('id', $request->question_id);
+
+        $options = collect($quizResponse->value('options'))->pluck('id');
+        $incorrectOptions = $options->reject(fn($id) => $id == 3);
+        $incorrectOption = $incorrectOptions->isNotEmpty() ? $incorrectOptions->random() : null;
+
+        // Return IDs of options to remove
+        $optionsToKeep = [2, 3];
+        // // Get options to remove (all incorrect options except the chosen incorrect one)
+        // $optionsToRemove = $options
+        //                     ->whereNotIn($optionsToKeep)
+        //                     ->values();
+        $optionsToRemove = array_diff($options->toArray(), $optionsToKeep);
+
+        return $this->successResponse($optionsToRemove, "Record has been founded!", 200);
     }
 
     public function update(Request $request, Quiz $quiz)

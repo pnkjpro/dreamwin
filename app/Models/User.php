@@ -48,4 +48,20 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function lifelines() {
+        return $this->hasMany(UserLifeline::class);
+    }
+    
+    public function lifelineUsages() {
+        return $this->hasMany(LifelineUsage::class);
+    }
+    
+    // Helper method to check if user has lifeline
+    public function hasLifeline($lifelineId) {
+        return $this->lifelines()
+            ->where('lifeline_id', $lifelineId)
+            ->where('quantity', '>', 0)
+            ->exists();
+    }
 }

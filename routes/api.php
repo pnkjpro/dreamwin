@@ -25,6 +25,7 @@ Route::prefix('quiz')->group(function(){
     Route::get('/', [QuizController::class, 'index']);
     Route::post('/create', [QuizController::class, 'store']);
     Route::post('/submit', [QuizController::class, 'userResponse']);
+    Route::post('/show', [QuizController::class, 'quizByNodeId']);
 });
 
 
