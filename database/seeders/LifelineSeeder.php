@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\Lifeline;
 
 class LifelineSeeder extends Seeder
 {
@@ -26,22 +27,6 @@ class LifelineSeeder extends Seeder
             'icon' => 'skip.svg',
             'cost' => 150,
             'effect_description' => 'Skips to the next question without losing points'
-        ]);
-        
-        Lifeline::create([
-            'name' => 'Hint',
-            'description' => 'Provides a helpful hint for the current question.',
-            'icon' => 'hint.svg',
-            'cost' => 75,
-            'effect_description' => 'Shows a hint about the correct answer'
-        ]);
-        
-        Lifeline::create([
-            'name' => 'Extra Time',
-            'description' => 'Adds 30 seconds to the timer for the current question.',
-            'icon' => 'time.svg',
-            'cost' => 120,
-            'effect_description' => 'Adds 30 seconds to the question timer'
         ]);
     }
 }

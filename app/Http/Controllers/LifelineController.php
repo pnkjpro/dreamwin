@@ -6,8 +6,10 @@ use Illuminate\Http\Request;
 use App\Models\Lifeline;
 use App\Models\UserLifeline;
 use App\Models\LifelineUsage;
+use App\Models\User;
 use App\Models\Transaction;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 
 class LifelineController extends Controller
@@ -45,15 +47,21 @@ class LifelineController extends Controller
         ]);
     }
     
-    public function purchase(Request $request)
+    public function purchaseLifeline(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'lifeline_id' => 'required|exists:lifelines,id',
             'quantity' => 'required|integer|min:1'
         ]);
+
+        // If validation fails, return the error response
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
         
         $lifeline = Lifeline::findOrFail($request->lifeline_id);
-        $user = auth()->user();
+        // $user = auth()->user();
+        $user = User::findOrFail(1);
         
         // Calculate total cost
         $totalCost = $lifeline->cost * $request->quantity;

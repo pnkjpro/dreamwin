@@ -3,21 +3,32 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\User;
+use App\Models\Quiz;
+use App\Models\Lifeline;
+use App\Models\LifelineUsage;
+use App\Models\UserResponse;
+use Illuminate\Support\Facades\Validator;
+
 
 class LifelineUsageController extends Controller
 {
     public function useLifeline(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(),[
             'lifeline_id' => 'required|exists:lifelines,id',
             'node_id' => 'required|exists:quizzes,node_id',
             'userResponseId' => 'required|exists:user_responses,id',
             'question_id' => 'required'
         ]);
+
+        // If validation fails, return the error response
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
         
-        $user = auth()->user();
+        $user = User::findOrFail(1);
         $attempt = UserResponse::findOrFail($request->userResponseId);
-        // $question = Question::findOrFail($request->question_id);
         $questionId = $request->question_id;
         $quiz = Quiz::where('node_id', $request->node_id)->first();
         $quizContents = collect($quiz->quizContents);
@@ -45,22 +56,22 @@ class LifelineUsageController extends Controller
         }
         
         // Check if this lifeline was already used for this question
-        if ($attempt->hasUsedLifelineForQuestion($request->lifeline_id, $request->question_id, $request->userResponseId)) {
+        if ($this->hasUsedLifelineForQuestion($user->id, $request->lifeline_id, $request->question_id, $request->userResponseId)) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'This lifeline has already been used for this question'
             ], 403);
         }
-        
         // Process the specific lifeline
         $result = $this->processLifeline($request->lifeline_id, $question);
+        // dd($user->id, $request->lifeline_id, $attempt->id, $request->question_id);
         
         // Record lifeline usage
         LifelineUsage::create([
             'user_id' => $user->id,
             'lifeline_id' => $request->lifeline_id,
             'user_response_id' => $attempt->id,
-            'question_id' => $question->id,
+            'question_id' => $request->question_id,
             'used_at' => now(),
             'result_data' => json_encode($result)
         ]);
@@ -77,12 +88,12 @@ class LifelineUsageController extends Controller
     }
 
     // Check if lifeline was used for a specific question
-    public function hasUsedLifelineForQuestion($lifelineId, $questionId) {
-        return $this->lifelineUsages()
-            ->where('lifeline_id', $lifelineId)
-            ->where('question_id', $questionId)
-            ->where('user_response_id', $userResponseId)
-            ->exists();
+    public function hasUsedLifelineForQuestion($userId, $lifelineId, $questionId, $userResponseId) {
+        return LifelineUsage::where('user_id', $userId) //while its not necessary to compare because userResponseId already fetched from authUser
+                        ->where('lifeline_id', $lifelineId)
+                        ->where('question_id', $questionId)
+                        ->where('user_response_id', $userResponseId)
+                        ->exists();
     }
     
     private function processLifeline($lifelineId, $question)
@@ -138,18 +149,6 @@ class LifelineUsageController extends Controller
             'lifeline_type' => 'Skip Question',
             'status' => 'success',
             'next_question' => 'Question Skipped and Proceeded to next question'
-        ];
-    }
-    
-    private function processExtraTimeLifeline($question)
-    {
-        // Give 30 seconds extra time
-        $extraTime = 30;
-        
-        return [
-            'lifeline_type' => 'Extra Time',
-            'extra_seconds' => $extraTime,
-            'message' => "{$extraTime} seconds added to question timer"
         ];
     }
 }

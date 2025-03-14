@@ -8,6 +8,7 @@ use Illuminate\Validation\Rule;
 use App\Models\Quiz;
 use App\Models\UserResponse;
 
+use Illuminate\Support\Facades\Validator;
 use App\Traits\JsonResponseTrait;
 
 class QuizController extends Controller
@@ -21,24 +22,21 @@ class QuizController extends Controller
     public function store(Request $request)
     {
         
-        // $validated = $request->validate([
-        //     'category_id' => 'required|exists:categories,id',
-        //     // 'node_id' => 'required|integer',
-        //     'title' => 'required|string|max:255',
-        //     'description' => 'required|string',
-        //     'banner_image' => 'nullable|string',
-        //     // 'quizContents' => 'required|json',
-        //     'spot_limit' => 'required|integer',
-        //     'entry_fees' => 'required|integer',
-        //     'prize_money' => 'required|integer'
-        // ]);
+        $validator = Validator::make($request->all(),[
+            'category_id' => 'required|exists:categories,id',
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'banner_image' => 'nullable|string',
+            'quizContents' => 'required|json',
+            'spot_limit' => 'required|integer',
+            'entry_fees' => 'required|integer',
+            'prize_money' => 'required|integer'
+        ]);
 
-        $data = $request->all();
         $nodeId = $this->generateNodeId();
-        $data['node_id'] = $nodeId;
-        
+        $validator['node_id'] = $nodeId;
 
-        $quiz = Quiz::create($data);
+        $quiz = Quiz::create($validator);
 
         return $this->successResponse($quiz, "Quiz has been created", 201);
     }
@@ -81,27 +79,13 @@ class QuizController extends Controller
         $nodeId = $request->node_id;
         $quiz = Quiz::where('node_id', $nodeId)->first();
         $quizResponse = collect($quiz->quizContents)->select('id','question', 'options');
-        // $quizResponse = collect($quiz->quizContents);
-        $quizResponse = $quizResponse->where('id', $request->question_id);
 
-        $options = collect($quizResponse->value('options'))->pluck('id');
-        $incorrectOptions = $options->reject(fn($id) => $id == 3);
-        $incorrectOption = $incorrectOptions->isNotEmpty() ? $incorrectOptions->random() : null;
-
-        // Return IDs of options to remove
-        $optionsToKeep = [2, 3];
-        // // Get options to remove (all incorrect options except the chosen incorrect one)
-        // $optionsToRemove = $options
-        //                     ->whereNotIn($optionsToKeep)
-        //                     ->values();
-        $optionsToRemove = array_diff($options->toArray(), $optionsToKeep);
-
-        return $this->successResponse($optionsToRemove, "Record has been founded!", 200);
+        return $this->successResponse($quizResponse, "Record has been founded!", 200);
     }
 
     public function update(Request $request, Quiz $quiz)
     {
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(),[
             'category_id' => 'sometimes|exists:categories,id',
             'node_id' => 'sometimes|integer',
             'title' => 'sometimes|string|max:255',
@@ -113,6 +97,11 @@ class QuizController extends Controller
             'prize_money' => 'sometimes|integer',
             'is_active' => ['sometimes', Rule::in([0, 1])],
         ]);
+
+        // If validation fails, return the error response
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
 
         $quiz->update($validated);
 
