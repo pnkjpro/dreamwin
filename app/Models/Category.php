@@ -16,4 +16,8 @@ class Category extends Model
         'is_active',
         'display_order',
     ];
+
+    public function quizzes(){
+        return $this->hasMany(Quiz::class);
+    }
 }

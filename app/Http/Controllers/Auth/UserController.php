@@ -8,20 +8,27 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
-class UserAuthController extends Controller
+
+class UserController extends Controller
 {
     /**
      * Register a new user.
      */
     public function register(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(),[
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'mobile' => 'nullable|string|unique:users,mobile',
+            'mobile' => 'nullable|numeric|unique:users,mobile',
             'password' => 'required|min:6|confirmed',
         ]);
+
+        // If validation fails, return the error response
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
 
         $user = User::create([
             'name' => $request->name,

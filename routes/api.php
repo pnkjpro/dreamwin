@@ -5,7 +5,8 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\LifelineController;
 use App\Http\Controllers\LifelineUsageController;
-use App\Http\Controllers\Auth\UserAuthController;
+use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\Auth\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/user', function (Request $request) {
@@ -28,6 +29,8 @@ Route::prefix('quiz')->group(function(){
     Route::post('/create', [QuizController::class, 'store']);
     Route::post('/submit', [QuizController::class, 'userResponse']);
     Route::get('/show', [QuizController::class, 'quizByNodeId']);
+    Route::get('/contest', [QuizController::class, 'listVariant']);
+    Route::post('/variant/create', [QuizController::class, 'createVariant']);
 });
 
 
@@ -39,4 +42,15 @@ Route::prefix('category')->group(function(){
 Route::prefix('lifeline')->group(function(){
     Route::post('/purchase', [LifelineController::class, 'purchaseLifeline']);
     Route::post('/use', [LifelineUsageController::class, 'useLifeline']);
+});
+
+Route::prefix('users')->group(function(){
+    Route::get('/user', [UserController::class, 'fetchUser']);
+    Route::post('/create', [UserController::class, 'register']);
+    Route::post('/login', [UserController::class, 'login']);
+});
+
+Route::middleware('auth:sanctum')->prefix('funds')->group(function(){
+    Route::post('/transaction', [TransactionController::class, 'make_transaction']);
+    Route::post('/transaction/approval', [TransactionController::class, 'fundApproval']);
 });

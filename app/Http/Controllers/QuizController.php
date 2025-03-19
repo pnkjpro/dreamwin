@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 use App\Models\Quiz;
+use App\Models\QuizVariant;
 use App\Models\UserResponse;
 
 use Illuminate\Support\Facades\Validator;
@@ -16,7 +17,7 @@ class QuizController extends Controller
     use JsonResponseTrait;
     public function index()
     {
-        return $this->successResponse(Quiz::all(), "Records has been founded", 200);
+        return $this->successResponse(Quiz::with(['category', 'quiz_variants'])->get(), "Records has been founded", 200);
     }
 
     public function store(Request $request)
@@ -27,16 +28,25 @@ class QuizController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'banner_image' => 'nullable|string',
-            'quizContents' => 'required|json',
+            'quizContents' => 'required|array',
+            // 'quizContents.*.question' => 'required|string',
+            // 'quizContents.*.options' => 'required|array|min:2',
+            // 'quizContents.*.options.*.id' => 'required|integer',
+            // 'quizContents.*.options.*.option' => 'required|string',
+            // 'quizContents.*.correctAnswerId' => 'required|integer',
             'spot_limit' => 'required|integer',
             'entry_fees' => 'required|integer',
             'prize_money' => 'required|integer'
         ]);
 
-        $nodeId = $this->generateNodeId();
-        $validator['node_id'] = $nodeId;
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
 
-        $quiz = Quiz::create($validator);
+        $data = $validator->validated();
+        $data['node_id'] = $this->generateNodeId();
+
+        $quiz = Quiz::create($data);
 
         return $this->successResponse($quiz, "Quiz has been created", 201);
     }
@@ -48,6 +58,26 @@ class QuizController extends Controller
             $nodeId++;
         }
         return $nodeId;
+    }
+
+    public function createVariant(Request $request){
+        $validator = Validator::make($request->all(),[
+            'quiz_id' => 'required|exists:quizzes,id',
+            'entry_fee' => 'required|numeric',
+            'prize' => 'required|numeric',
+            'prize_contents' => 'required|array',
+            'slot_limit' => 'required|numeric',
+            'status' => 'nullable|in:active,inactive'
+        ]);
+
+        if($validator->fails()){
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $data = $validator->validated();
+        $data['prize_contents'] = json_encode($data['prize_contents']);
+        $variant = QuizVariant::create($data);
+        return $this->successResponse($variant, "Quiz has been created", 201);
     }
 
     public function userResponse(Request $request){
@@ -81,6 +111,12 @@ class QuizController extends Controller
         $quizResponse = collect($quiz->quizContents)->select('id','question', 'options');
 
         return $this->successResponse($quizResponse, "Record has been founded!", 200);
+    }
+
+    public function listVariant(Request $request){
+        $nodeId = $request->query('node_id');
+        $variants = Quiz::with('quiz_variants')->where('node_id', $nodeId)->first();
+        return $this->successResponse($variants->makeHidden('quizContents'), "Record has been founded!", 200);
     }
 
     public function update(Request $request, Quiz $quiz)

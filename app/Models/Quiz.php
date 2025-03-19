@@ -14,4 +14,12 @@ class Quiz extends Model
     protected $casts = [
         'quizContents' => 'array',
     ];
+
+    public function category(){
+        return $this->belongsTo(Category::class);
+    }
+
+    public function quiz_variants(){
+        return $this->hasMany(QuizVariant::class);
+    }
 }

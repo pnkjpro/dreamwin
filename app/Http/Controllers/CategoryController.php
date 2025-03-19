@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Category;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Validator;
 
 use App\Traits\JsonResponseTrait;
 
@@ -25,7 +26,7 @@ class CategoryController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(),[
             'name' => 'required|string|max:255',
             'slug' => 'nullable|string|unique:categories,slug',
             'description' => 'nullable|string',
@@ -35,6 +36,10 @@ class CategoryController extends Controller
             'is_active' => 'required|in:0,1',
             'display_order' => 'required|integer',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
 
         $slug = $request->slug ?: Str::slug($request->name);
         $originalSlug = $slug;
