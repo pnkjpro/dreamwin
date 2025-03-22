@@ -12,7 +12,7 @@ class Quiz extends Model
     ];
 
     protected $casts = [
-        'quizContents' => 'array',
+        'quizContents' => 'collection',
     ];
 
     public function category(){
@@ -21,5 +21,9 @@ class Quiz extends Model
 
     public function quiz_variants(){
         return $this->hasMany(QuizVariant::class);
+    }
+
+    public function quiz_sheet(){
+        return $this->hasOne(QuizSheet::class);
     }
 }

@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('quiz_id')->constrained('quizzes')->onDelete('cascade');
             $table->integer('entry_fee')->default(0);
             $table->integer('prize')->default(0);
+            $table->json('prize_contents')->nullable();
             $table->integer('slot_limit')->default(0);
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->timestamps();

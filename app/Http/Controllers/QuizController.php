@@ -8,6 +8,8 @@ use Illuminate\Validation\Rule;
 use App\Models\Quiz;
 use App\Models\QuizVariant;
 use App\Models\UserResponse;
+use Illuminate\Support\Facades\Auth;
+
 
 use Illuminate\Support\Facades\Validator;
 use App\Traits\JsonResponseTrait;
@@ -17,7 +19,8 @@ class QuizController extends Controller
     use JsonResponseTrait;
     public function index()
     {
-        return $this->successResponse(Quiz::with(['category', 'quiz_variants'])->get(), "Records has been founded", 200);
+        $quizzes = Quiz::with(['category', 'quiz_variants'])->get()->makeHidden('quizContents');
+        return $this->successResponse($quizzes, "Records has been founded", 200);
     }
 
     public function store(Request $request)
@@ -75,7 +78,6 @@ class QuizController extends Controller
         }
 
         $data = $validator->validated();
-        $data['prize_contents'] = json_encode($data['prize_contents']);
         $variant = QuizVariant::create($data);
         return $this->successResponse($variant, "Quiz has been created", 201);
     }
@@ -107,16 +109,30 @@ class QuizController extends Controller
 
     public function quizByNodeId(Request $request){
         $nodeId = $request->node_id;
+        $question_id = $request->question_id;
         $quiz = Quiz::where('node_id', $nodeId)->first();
-        $quizResponse = collect($quiz->quizContents)->select('id','question', 'options');
+        $quizResponse = $quiz->quizContents->select('id','question', 'options');
+        $question = $quizResponse->where('id', $question_id);
 
-        return $this->successResponse($quizResponse, "Record has been founded!", 200);
+        // return $this->successResponse($quizResponse, "Record has been founded!", 200);
+        return $this->successResponse($question, "Record has been founded!", 200);
+    }
+
+    public function nextQuestion(Request $request){
+        $nodeId = $request->node_id;
+        $question_id = $request->question_id;
+        $user = Auth::user();
+        $quiz = Quiz::where('node_id', $nodeId)->first();
+        $question = $quiz->quizContents->where('id', $question_id)->first();
+
+        return $question;
+        
     }
 
     public function listVariant(Request $request){
         $nodeId = $request->query('node_id');
-        $variants = Quiz::with('quiz_variants')->where('node_id', $nodeId)->first();
-        return $this->successResponse($variants->makeHidden('quizContents'), "Record has been founded!", 200);
+        $QuizVariants = Quiz::with('quiz_variants')->where('node_id', $nodeId)->first();
+        return $this->successResponse($QuizVariants->makeHidden('quizContents'), "Record has been founded!", 200);
     }
 
     public function update(Request $request, Quiz $quiz)

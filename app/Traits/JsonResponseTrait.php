@@ -15,7 +15,7 @@ trait JsonResponseTrait
         ], $code);
     }
     
-    protected function errorResponse($message, $code, $data=null)
+    protected function errorResponse($data=null, $message, $code = 422)
     {
         return response()->json([
             'error' => true,

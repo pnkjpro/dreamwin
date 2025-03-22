@@ -5,6 +5,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\LifelineController;
 use App\Http\Controllers\LifelineUsageController;
+use App\Http\Controllers\PlayQuizController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\Auth\UserController;
 use Illuminate\Support\Facades\Route;
@@ -53,4 +54,9 @@ Route::prefix('users')->group(function(){
 Route::middleware('auth:sanctum')->prefix('funds')->group(function(){
     Route::post('/transaction', [TransactionController::class, 'make_transaction']);
     Route::post('/transaction/approval', [TransactionController::class, 'fundApproval']);
+});
+
+Route::middleware('auth:sanctum')->prefix('play')->group(function(){
+    Route::post('/', [PlayQuizController::class, 'play_quiz']);
+    Route::post('/next', [PlayQuizController::class, 'nextQuestion']);
 });

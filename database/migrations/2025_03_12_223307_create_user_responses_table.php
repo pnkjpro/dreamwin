@@ -15,8 +15,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('quiz_id')->constrained('quizzes')->onDelete('cascade');
-            $table->integer('score');
-            $table->json('responseContents');
+            $table->foreignId('quiz_variant_id')->constrained('quiz_variants')->onDelete('cascade')->nullable();
+            $table->integer('score')->default(0);
+            $table->json('responseContents')->nullable();
+            $table->enum('status', ['initiated', 'completed'])->default('initiated');
             $table->timestamps();
         });
     }
