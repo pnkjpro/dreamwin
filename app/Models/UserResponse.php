@@ -14,6 +14,10 @@ class UserResponse extends Model
         'responseContents' => 'collection'
     ];
 
+    public function lifeline_usages(){
+        return $this->hasMany(LifelineUsage::class);
+    }
+
     /** responseContents
      * question_id
      * answer_id

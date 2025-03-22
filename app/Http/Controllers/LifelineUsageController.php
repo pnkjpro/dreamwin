@@ -18,7 +18,6 @@ class LifelineUsageController extends Controller
         $validator = Validator::make($request->all(),[
             'lifeline_id' => 'required|exists:lifelines,id',
             'node_id' => 'required|exists:quizzes,node_id',
-            'userResponseId' => 'required|exists:user_responses,id',
             'question_id' => 'required'
         ]);
 
@@ -27,21 +26,27 @@ class LifelineUsageController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
         
-        $user = User::findOrFail(1);
-        $attempt = UserResponse::findOrFail($request->userResponseId);
-        $questionId = $request->question_id;
+        $requestedData = $validator->validated();
+        $user = Auth::user();
         $quiz = Quiz::where('node_id', $request->node_id)->first();
         $quizContents = collect($quiz->quizContents);
         $this->maxQuestionCount = $quizContents->count();
-        $question = $quizContents->where('id', $questionId);
-        
-        // Ensure the attempt belongs to the user
-        if ($attempt->user_id !== $user->id) {
+        $this->nodeId = $requestedData['node_id'];
+        $question = $quizContents->where('id', $requestedData['question_id']);
+        $userResponse = UserResponse::where('quiz_id', $quiz->id)
+                                ->where('user_id', Auth::user()->id)
+                                ->first();
+
+ 
+        // check if the user has attempted the quiz
+        if($userResponse->isEmpty()){
             return response()->json([
                 'status' => 'error',
-                'message' => 'Unauthorized access to quiz attempt'
-            ], 403);
+                'message' => 'Unauthorized access to Quiz'
+            ]);
         }
+
+        $this->userResponse = $userResponse;
         
         // Check if user has the lifeline
         $userLifeline = $user->lifelines()
@@ -64,21 +69,21 @@ class LifelineUsageController extends Controller
         }
         // Process the specific lifeline
         $result = $this->processLifeline($request->lifeline_id, $question);
-        // dd($user->id, $request->lifeline_id, $attempt->id, $request->question_id);
+        // dd($user->id, $request->lifeline_id, $userResponse->id, $request->question_id);
         
         // Record lifeline usage
         LifelineUsage::create([
             'user_id' => $user->id,
             'lifeline_id' => $request->lifeline_id,
-            'user_response_id' => $attempt->id,
+            'user_response_id' => $userResponse->id,
             'question_id' => $request->question_id,
             'used_at' => now(),
             'result_data' => json_encode($result)
         ]);
         
         // Decrement lifeline quantity
-        $userLifeline->decrement('quantity');
-        $userLifeline->update(['last_used_at' => now()]);
+        // $userLifeline->decrement('quantity');
+        // $userLifeline->update(['last_used_at' => now()]);
         
         return response()->json([
             'status' => 'success',
@@ -108,8 +113,8 @@ class LifelineUsageController extends Controller
             case 'Skip Question':
                 return $this->processSkipQuestionLifeline($question);
                 
-            case 'Extra Time':
-                return $this->processExtraTimeLifeline($question);
+            case 'Revive Game':
+                return $this->processReviveGameLifeline($question);
                 
             default:
                 throw new \Exception("Unknown lifeline type: {$lifeline->name}");
@@ -135,20 +140,65 @@ class LifelineUsageController extends Controller
         ];
     }
     
-    private function processSkipQuestionLifeline($question)
-    {
-        if($this->maxQuestionCount == $question->value('id')){
-            return [
-                'lifeline_type' => 'Skip Question',
-                'status' => 'quiz_end',
-                'message' => 'This was the last question'
-            ];
-        }
+    // private function processSkipQuestionLifeline($question)
+    // {
+    //     if($this->maxQuestionCount == $question->value('id')){
+    //         return [
+    //             'lifeline_type' => 'Skip Question',
+    //             'status' => 'quiz_end',
+    //             'message' => 'This was the last question'
+    //         ];
+    //     }
         
-        return [
-            'lifeline_type' => 'Skip Question',
-            'status' => 'success',
-            'next_question' => 'Question Skipped and Proceeded to next question'
-        ];
+    //     return [
+    //         'lifeline_type' => 'Skip Question',
+    //         'status' => 'success',
+    //         'next_question' => 'Question Skipped and Proceeded to next question'
+    //     ];
+    // }
+
+    public function processSkipQuestionLifeline($question)
+    {
+        /**
+         * SkipQuestion means current question is not yet submitted
+         */
+        $request = new Request([
+            'node_id' => $this->nodeId,
+            'question_id' => $question->id,
+            'answer_id' => $question->correctAnswerId
+        ]);
+
+        $playQuizController = new PlayQuizController();
+        $result = $playQuizController->nextQuestion($request);
+        dd(result);
+    }
+
+    public function processReviveGameLifeline($question){
+
+        /**
+         * ReviveGame means current question is submitted and that's we need to update
+         * userResponse's status, remove current response from responseContents
+         */
+
+        $this->userResponse->update(['status' => 'initiated']); //revive the game
+        $responseContents = collect($this->userResponse->responseContents)
+            ->reject(fn($item) => $item['question_id'] == $questionId)
+            ->values() // Reset keys
+            ->all(); 
+
+        // Update the JSON column in the database
+        $this->userResponse->update([
+            'responseContents' => $responseContents
+        ]);
+
+        $request = new Request([
+            'node_id' => $this->nodeId,
+            'question_id' => $question->id,
+            'answer_id' => $question->correctAnswerId
+        ]);
+
+        $playQuizController = new PlayQuizController();
+        $result = $playQuizController->nextQuestion($request);
+        dd($result);
     }
 }

@@ -28,5 +28,13 @@ class LifelineSeeder extends Seeder
             'cost' => 150,
             'effect_description' => 'Skips to the next question without losing points'
         ]);
+        
+        Lifeline::create([
+            'name' => 'Revive Game',
+            'description' => 'Revive the Game within 60 seconds of failed quiz',
+            'icon' => 'revive.svg',
+            'cost' => 199,
+            'effect_description' => 'Revive the game without losing points'
+        ]);
     }
 }

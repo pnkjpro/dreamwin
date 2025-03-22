@@ -68,7 +68,7 @@ class PlayQuizController extends Controller
             $question = $quiz->quizContents->where('id', $nextQuesId)->select('id', 'question', 'options')->first();
             return $question;
         }
-        return $this->errorResponse([], $validatedQuestion['message'], 422);    
+        return $this->errorResponse($validatedQuestion, $validatedQuestion['message'], 422);    
     }
 
     /**
@@ -114,8 +114,8 @@ class PlayQuizController extends Controller
                 ]);
                 if($isCorrect){
                     $userResponse->increment('score', 1);
-                    $quizQuesCount = $quiz->quizContents->count();
-                    if($questionId == $quizQuesCount){
+                    $maxQuestionCount = $quiz->quizContents->count();
+                    if($questionId == $maxQuestionCount){
                         $userResponse->update(['status' => 'completed']);
                         return ['flag' => true, 'message' => "Last question & Correct Answer, quiz submitted", 'is_nextQuestion' => false];
                     } else {
@@ -131,7 +131,6 @@ class PlayQuizController extends Controller
             }
          }else {
             return ['flag' => false, 'message' => "Invalid Question", 'is_nextQuestion' => false];
-         }
-        
+         }     
     }
 }
