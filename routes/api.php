@@ -40,7 +40,7 @@ Route::prefix('category')->group(function(){
     Route::post('/create', [CategoryController::class, 'store']);
 });
 
-Route::prefix('lifeline')->group(function(){
+Route::middleware('auth:sanctum')->prefix('lifeline')->group(function(){
     Route::post('/purchase', [LifelineController::class, 'purchaseLifeline']);
     Route::post('/use', [LifelineUsageController::class, 'useLifeline']);
 });
@@ -57,6 +57,7 @@ Route::middleware('auth:sanctum')->prefix('funds')->group(function(){
 });
 
 Route::middleware('auth:sanctum')->prefix('play')->group(function(){
+    Route::post('/quiz/join', [PlayQuizController::class, 'join_quiz']);
     Route::post('/', [PlayQuizController::class, 'play_quiz']);
     Route::post('/next', [PlayQuizController::class, 'nextQuestion']);
 });

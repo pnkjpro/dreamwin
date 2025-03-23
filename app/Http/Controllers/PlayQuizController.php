@@ -44,10 +44,11 @@ class PlayQuizController extends Controller
 
         $question = $this->nextQuestion(new Request([
             'node_id' => $requestData['node_id'],
-            'question_id' => 0 //initially started
+            'question_id' => 0, //initially started
+            'initiate_game' => true
         ]));
 
-        return response()->json(['data' => $question]);
+        return $this->successResponse($question->original['data'], "Game Initiated Successfully!", 200);
 
     }
 
@@ -58,15 +59,16 @@ class PlayQuizController extends Controller
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
+        $initiate_game = isset($request['initiate_game']) ? $request['initiate_game'] : false;
         $nodeId = $request->node_id;
         $questionId = $request->question_id;
         $answerId = $request->answer_id;
         $validatedQuestion = $this->validateQuestion($nodeId, $questionId, $answerId);
-        if($validatedQuestion['is_nextQuestion']){
+        if($validatedQuestion['is_nextQuestion'] || $initiate_game){
             $nextQuesId = $questionId+1;
             $quiz = Quiz::where('node_id', $nodeId)->first();
             $question = $quiz->quizContents->where('id', $nextQuesId)->select('id', 'question', 'options')->first();
-            return $question;
+            return $this->successResponse($question, "Question Retrieved Successfully", 200);
         }
         return $this->errorResponse($validatedQuestion, $validatedQuestion['message'], 422);    
     }
@@ -132,5 +134,10 @@ class PlayQuizController extends Controller
          }else {
             return ['flag' => false, 'message' => "Invalid Question", 'is_nextQuestion' => false];
          }     
+    }
+
+    public function join_quiz(Request $request)
+    {
+        //
     }
 }

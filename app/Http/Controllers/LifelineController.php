@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Transaction;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 
 class LifelineController extends Controller
@@ -58,10 +59,10 @@ class LifelineController extends Controller
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
+        $data = $validator->validated();
         
         $lifeline = Lifeline::findOrFail($request->lifeline_id);
-        // $user = auth()->user();
-        $user = User::findOrFail(1);
+        $user = Auth::user();
         
         // Calculate total cost
         $totalCost = $lifeline->cost * $request->quantity;

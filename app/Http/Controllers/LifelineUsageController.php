@@ -9,10 +9,14 @@ use App\Models\Lifeline;
 use App\Models\LifelineUsage;
 use App\Models\UserResponse;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
+use App\Traits\JsonResponseTrait;
+
 
 
 class LifelineUsageController extends Controller
 {
+    use JsonResponseTrait;
     public function useLifeline(Request $request)
     {
         $validator = Validator::make($request->all(),[
@@ -33,17 +37,17 @@ class LifelineUsageController extends Controller
         $this->maxQuestionCount = $quizContents->count();
         $this->nodeId = $requestedData['node_id'];
         $question = $quizContents->where('id', $requestedData['question_id']);
+        $this->questionId = collect($question)->value('id');
+        $this->correctAnswerId = $question->value('correctAnswerId');
         $userResponse = UserResponse::where('quiz_id', $quiz->id)
                                 ->where('user_id', Auth::user()->id)
                                 ->first();
 
+
  
         // check if the user has attempted the quiz
-        if($userResponse->isEmpty()){
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Unauthorized access to Quiz'
-            ]);
+        if(empty($userResponse)){
+            return $this->errorResponse([], 'Unauthorized access to Quiz', 422);
         }
 
         $this->userResponse = $userResponse;
@@ -54,23 +58,19 @@ class LifelineUsageController extends Controller
             ->first();
             
         if (!$userLifeline || $userLifeline->quantity <= 0) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'You do not have this lifeline available'
-            ], 403);
+            return $this->errorResponse([], 'You do not have this lifeline available', 403);
         }
         
         // Check if this lifeline was already used for this question
         if ($this->hasUsedLifelineForQuestion($user->id, $request->lifeline_id, $request->question_id, $request->userResponseId)) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'This lifeline has already been used for this question'
-            ], 403);
+            return $this->errorResponse([], 'This lifeline has already been used for this question', 403);
         }
         // Process the specific lifeline
         $result = $this->processLifeline($request->lifeline_id, $question);
-        // dd($user->id, $request->lifeline_id, $userResponse->id, $request->question_id);
-        
+        if($result->original['error']){
+            return $this->errorResponse([], $result->original['message'], 422);
+        }
+
         // Record lifeline usage
         LifelineUsage::create([
             'user_id' => $user->id,
@@ -78,18 +78,14 @@ class LifelineUsageController extends Controller
             'user_response_id' => $userResponse->id,
             'question_id' => $request->question_id,
             'used_at' => now(),
-            'result_data' => json_encode($result)
+            'result_data' => json_encode($result->original['data'])
         ]);
         
         // Decrement lifeline quantity
-        // $userLifeline->decrement('quantity');
-        // $userLifeline->update(['last_used_at' => now()]);
-        
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Lifeline used successfully',
-            'data' => $result
-        ]);
+        $userLifeline->decrement('quantity');
+        $userLifeline->update(['last_used_at' => now()]);
+
+        return $this->successResponse($result->original['data'], $result->original['message'], 200);
     }
 
     // Check if lifeline was used for a specific question
@@ -134,55 +130,37 @@ class LifelineUsageController extends Controller
         $optionsToKeep = [$correctAnswerId, $incorrectOptionId];
         $optionsToRemove = array_diff($options->toArray(), $optionsToKeep);
          
-        return [
+        $data = [
             'lifeline_type' => '50:50',
             'options_to_remove' => $optionsToRemove
         ];
+        return $this->successResponse($data, "2 incorrect options are removed", 200);
     }
-    
-    // private function processSkipQuestionLifeline($question)
-    // {
-    //     if($this->maxQuestionCount == $question->value('id')){
-    //         return [
-    //             'lifeline_type' => 'Skip Question',
-    //             'status' => 'quiz_end',
-    //             'message' => 'This was the last question'
-    //         ];
-    //     }
-        
-    //     return [
-    //         'lifeline_type' => 'Skip Question',
-    //         'status' => 'success',
-    //         'next_question' => 'Question Skipped and Proceeded to next question'
-    //     ];
-    // }
 
     public function processSkipQuestionLifeline($question)
     {
-        /**
-         * SkipQuestion means current question is not yet submitted
-         */
         $request = new Request([
             'node_id' => $this->nodeId,
-            'question_id' => $question->id,
-            'answer_id' => $question->correctAnswerId
+            'question_id' => $this->questionId,
+            'answer_id' => $this->correctAnswerId
         ]);
 
         $playQuizController = new PlayQuizController();
         $result = $playQuizController->nextQuestion($request);
-        dd(result);
+        // dd($result->original['message']);
+        if($result->original['error']){
+            return $this->errorResponse([], $result->original['message'], 422);
+        }
+        $result->original['data']['lifeline_type'] = "skip_question";
+        return $this->successResponse($result->original['data'], "Question is Skipped", 200);
     }
 
-    public function processReviveGameLifeline($question){
-
-        /**
-         * ReviveGame means current question is submitted and that's we need to update
-         * userResponse's status, remove current response from responseContents
-         */
+    public function processReviveGameLifeline($question)
+    {
 
         $this->userResponse->update(['status' => 'initiated']); //revive the game
         $responseContents = collect($this->userResponse->responseContents)
-            ->reject(fn($item) => $item['question_id'] == $questionId)
+            ->reject(fn($item) => $item['question_id'] == $this->questionId) //remove the response question from user response
             ->values() // Reset keys
             ->all(); 
 
@@ -193,12 +171,17 @@ class LifelineUsageController extends Controller
 
         $request = new Request([
             'node_id' => $this->nodeId,
-            'question_id' => $question->id,
-            'answer_id' => $question->correctAnswerId
+            'question_id' => $this->questionId,
+            'answer_id' => $this->correctAnswerId
         ]);
 
         $playQuizController = new PlayQuizController();
         $result = $playQuizController->nextQuestion($request);
-        dd($result);
+        if($result->original['error']){
+            return $this->errorResponse([], $result->original['message'], 422);
+        }
+
+        $result->original['data']['lifeline_type'] = "revive_game";
+        return $this->successResponse($result->original['data'], "Game is Continued", 200);
     }
 }
