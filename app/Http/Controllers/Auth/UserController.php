@@ -10,9 +10,13 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
+use App\Traits\JsonResponseTrait;
+
+
 
 class UserController extends Controller
 {
+    use JsonResponseTrait;
     /**
      * Register a new user.
      */
@@ -98,6 +102,22 @@ class UserController extends Controller
         $user->update(['mobile_verified_at' => now()]);
 
         return response()->json(['message' => 'Mobile number verified successfully']);
+    }
+
+    public function updatePaymentMode(Request $request){
+        $validator = Validator::make($request->all(), [
+            'upi_id' => 'required|string|max:225'
+        ]);
+
+        // If validation fails, return the error response
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $user = Auth::user();
+        $user->update(['upi_id' => $request->upi_id]);
+
+        return $this->successResponse([], "Payment Mode has been updated", 200);
     }
 
     /**
