@@ -61,6 +61,10 @@ class LifelineUsageController extends Controller
             return $this->errorResponse([], 'You do not have this lifeline available', 403);
         }
 
+        if ($this->isAlreadyUsedSpecificLifeline($user->id, $request->lifeline_id, $userResponse->id)){
+            return $this->errorResponse([], 'This lifeline has been used. Please try another one!', 403);
+        }
+
         if ($this->isLifelineLimitExceeded($user->id, $request->lifeline_id, $userResponse->id)){
             return $this->errorResponse([], 'Your lifeline Limit exceed for the current quiz', 403);
         }
@@ -101,11 +105,18 @@ class LifelineUsageController extends Controller
                         ->where('user_response_id', $userResponseId)
                         ->exists();
     }
+
+    // Check if specific lifeline has already been used in the current quiz
+    public function isAlreadyUsedSpecificLifeline(){
+        $lifelines = LifelineUsage::where('user_id', $userId)
+                            ->where('lifeline_id', $lifelineId)
+                            ->where('user_response_id', $userResponseId)
+                            ->exists();
+    }
     
     // Check if lifeline available for current quiz
     public function isLifelineLimitExceeded($userId, $lifelineId, $userResponseId){
         $lifelines = LifelineUsage::where('user_id', $userId)
-                            ->where('lifeline_id', $lifelineId)
                             ->where('user_response_id', $userResponseId)
                             ->get();
         if($lifelines->count() >= 3){
