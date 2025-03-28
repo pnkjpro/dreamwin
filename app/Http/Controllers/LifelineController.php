@@ -12,18 +12,16 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
+use App\Traits\JsonResponseTrait;
+
 
 class LifelineController extends Controller
-{
-    public function index()
+{ use JsonResponseTrait;
+
+    public function lifelines()
     {
-        $lifelines = Lifeline::where('is_active', true)
-            ->get();
-            
-        return response()->json([
-            'status' => 'success',
-            'data' => $lifelines
-        ]);
+        $lifelines = User::with('lifelines')->where('id', Auth::user()->id)->get();
+        return $this->successResponse($lifelines, "Available Lifelines", 200);
     }
     
     public function userLifelines()

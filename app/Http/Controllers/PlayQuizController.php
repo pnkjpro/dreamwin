@@ -107,7 +107,7 @@ class PlayQuizController extends Controller
                 $isCorrect = $isQuesIdExists->where('correctAnswerId', $answerId)->isNotEmpty();
                 $newResponse = [
                     'question_id' => $questionId,
-                    'answer_id' => 2,
+                    'answer_id' => $answerId,
                     'is_correct' => $isCorrect
                 ];
                 $existingResponses[] = $newResponse;

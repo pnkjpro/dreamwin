@@ -24,7 +24,6 @@ Route::get('/user', function (Request $request) {
 // });
 
 
-
 Route::prefix('quiz')->group(function(){
     Route::get('/', [QuizController::class, 'index']);
     Route::post('/create', [QuizController::class, 'store']);
@@ -41,12 +40,13 @@ Route::prefix('category')->group(function(){
 });
 
 Route::middleware('auth:sanctum')->prefix('lifeline')->group(function(){
+    Route::get('/', [LifelineController::class, 'lifelines']);
     Route::post('/purchase', [LifelineController::class, 'purchaseLifeline']);
     Route::post('/use', [LifelineUsageController::class, 'useLifeline']);
 });
 
 Route::prefix('users')->group(function(){
-    Route::get('/user', [UserController::class, 'fetchUser']);
+    Route::middleware('auth:sanctum')->get('/user', [UserController::class, 'fetchUser']);
     Route::post('/create', [UserController::class, 'register']);
     Route::post('/login', [UserController::class, 'login']);
 });

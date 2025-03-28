@@ -55,7 +55,7 @@ class UserController extends Controller
             'password' => 'required'
         ]);
 
-        $user = User::where('email', $request->login)
+        $user = User::with('lifelines')->where('email', $request->login)
                     ->orWhere('mobile', $request->login)
                     ->first();
 
@@ -70,6 +70,12 @@ class UserController extends Controller
         return response()->json([
             'user' => $user,
             'token' => $token
+        ]);
+    }
+
+    public function fetchUser(Request $request){
+        return response()->json([
+            'user' => Auth::user()->load('lifelines')->makeHidden('password')
         ]);
     }
 

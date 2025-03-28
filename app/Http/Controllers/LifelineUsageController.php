@@ -47,7 +47,7 @@ class LifelineUsageController extends Controller
  
         // check if the user has attempted the quiz
         if(empty($userResponse)){
-            return $this->errorResponse([], 'Unauthorized access to Quiz', 422);
+            return $this->errorResponse([], 'Unauthorized access to Quiz', 403);
         }
 
         $this->userResponse = $userResponse;
@@ -60,11 +60,16 @@ class LifelineUsageController extends Controller
         if (!$userLifeline || $userLifeline->quantity <= 0) {
             return $this->errorResponse([], 'You do not have this lifeline available', 403);
         }
+
+        if ($this->isLifelineLimitExceeded($user->id, $request->lifeline_id, $userResponse->id)){
+            return $this->errorResponse([], 'Your lifeline Limit exceed for the current quiz', 403);
+        }
         
         // Check if this lifeline was already used for this question
-        if ($this->hasUsedLifelineForQuestion($user->id, $request->lifeline_id, $request->question_id, $request->userResponseId)) {
+        if ($this->hasUsedLifelineForQuestion($user->id, $request->lifeline_id, $request->question_id, $userResponse->id)) {
             return $this->errorResponse([], 'This lifeline has already been used for this question', 403);
         }
+
         // Process the specific lifeline
         $result = $this->processLifeline($request->lifeline_id, $question);
         if($result->original['error']){
@@ -95,6 +100,19 @@ class LifelineUsageController extends Controller
                         ->where('question_id', $questionId)
                         ->where('user_response_id', $userResponseId)
                         ->exists();
+    }
+    
+    // Check if lifeline available for current quiz
+    public function isLifelineLimitExceeded($userId, $lifelineId, $userResponseId){
+        $lifelines = LifelineUsage::where('user_id', $userId)
+                            ->where('lifeline_id', $lifelineId)
+                            ->where('user_response_id', $userResponseId)
+                            ->get();
+        if($lifelines->count() >= 3){
+            return true;
+        } else {
+            return false;
+        }
     }
     
     private function processLifeline($lifelineId, $question)
