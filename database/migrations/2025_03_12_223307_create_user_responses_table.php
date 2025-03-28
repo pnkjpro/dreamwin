@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignId('quiz_variant_id')->constrained('quiz_variants')->onDelete('cascade')->nullable();
             $table->integer('score')->default(0);
             $table->json('responseContents')->nullable();
-            $table->enum('status', ['initiated', 'completed'])->default('initiated');
+            $table->enum('status', ['pending', 'joined', 'initiated', 'completed'])->default('pending');
             $table->timestamps();
         });
     }

@@ -7,8 +7,10 @@ use Illuminate\Http\Request;
 use App\Models\Quiz;
 use App\Models\QuizVariant;
 use App\Models\UserResponse;
+use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 use App\Http\Controllers\QuizController;
 
@@ -32,7 +34,7 @@ class PlayQuizController extends Controller
         $user = Auth::user();
         $quiz = Quiz::where('node_id', $requestData['node_id'])->first();
         $quizId = $quiz->id;
-        $isUserResponseExists = UserResponse::where('quiz_id', $quizId)->first();
+        $isUserResponseExists = UserResponse::where('quiz_id', $quizId)->whereIn('status', ['initiated', 'completed'])->first();
         if(isset($isUserResponseExists)){
             return $this->errorResponse([], "Game Already Started!", 422);
         }
@@ -40,6 +42,7 @@ class PlayQuizController extends Controller
         $userResponse->quiz_id = $quizId;
         $userResponse->user_id = $user->id;
         $userResponse->quiz_variant_id = $requestData['variant_id'];
+        $userResponse->status = 'initiated';
         $userResponse->save();
 
         $question = $this->nextQuestion(new Request([
@@ -138,6 +141,59 @@ class PlayQuizController extends Controller
 
     public function join_quiz(Request $request)
     {
-        //
+        $validator = Validator::make($request->all(),[
+            'node_id' => 'required|exists:quizzes,node_id',
+            'variant_id' => 'required|exists:quiz_variants,id'
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+        
+        $validated = $validator->validated();
+        $quiz = Quiz::where('node_id', $validated['node_id'])->first();
+        $isUserResponseExists = UserResponse::where('quiz_id', $quiz->id)->whereIn('status', ['joined', 'initiated', 'completed'])->first();
+        if(isset($isUserResponseExists)){
+            return $this->errorResponse([], "You have already Joined the Game", 422);
+        }
+        $variant = QuizVariant::where('quiz_id', $quiz->id)->where('id', $validated['variant_id'])->first();
+        $entryFee = $variant->entry_fee;
+        $user = Auth::user();
+        // Check if user has enough funds
+        if ($user->funds < $entryFee) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Insufficient funds to join the game'
+            ], 403);
+        }
+
+        DB::beginTransaction();
+        try{
+            
+            $userResponse = new UserResponse();
+            $userResponse->quiz_id = $quiz->id;
+            $userResponse->user_id = $user->id;
+            $userResponse->quiz_variant_id = $variant->id;
+            $userResponse->status = 'joined';
+            $userResponse->save();
+    
+            $user->decrement('funds', $entryFee);
+    
+            // Record the transaction
+            Transaction::create([
+                'user_id' => $user->id,
+                'type' => 'Quiz Entry',
+                'amount' => -$entryFee,
+                'description' => "Made Entry of {$entryFee} for {$quiz->title} quiz",
+                'reference_id' => $userResponse->id,
+                'reference_type' => UserResponse::class
+            ]);
+
+            DB::commit();
+            return $this->successResponse([], "Entry is made successfully for {$quiz->title}!", 201);
+        }catch(\Exception $e){
+            return $this->errorResponse([], $e->getMessage(), 500);
+        }
+
+        
     }
 }
