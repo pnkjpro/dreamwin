@@ -54,6 +54,10 @@ class User extends Authenticatable
     public function lifelines() {
         return $this->hasMany(UserLifeline::class);
     }
+
+    public function user_responses(){
+        return $this->hasMany(UserResponse::class);
+    }
     
     public function lifelineUsages() {
         return $this->hasMany(LifelineUsage::class);

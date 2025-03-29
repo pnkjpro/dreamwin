@@ -23,6 +23,9 @@ return new class extends Migration
             $table->integer('entry_fees');
             $table->integer('prize_money');
             $table->enum('is_active', [0, 1])->default(1);
+            $table->unsignedBigInteger('start_time');
+            $table->unsignedBigInteger('end_time');
+            $table->integer('totalQuestion')->default(0);
             $table->timestamps();
         });
     }

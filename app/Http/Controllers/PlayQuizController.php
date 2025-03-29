@@ -38,12 +38,7 @@ class PlayQuizController extends Controller
         if(isset($isUserResponseExists)){
             return $this->errorResponse([], "Game Already Started!", 422);
         }
-        $userResponse = new UserResponse();
-        $userResponse->quiz_id = $quizId;
-        $userResponse->user_id = $user->id;
-        $userResponse->quiz_variant_id = $requestData['variant_id'];
-        $userResponse->status = 'initiated';
-        $userResponse->save();
+        $userResponseModal = UserResponse::where('quiz_id', $quizId)->update(['status' => 'initiated']);
 
         $question = $this->nextQuestion(new Request([
             'node_id' => $requestData['node_id'],
@@ -72,6 +67,9 @@ class PlayQuizController extends Controller
             $quiz = Quiz::where('node_id', $nodeId)->first();
             $question = $quiz->quizContents->where('id', $nextQuesId)->select('id', 'question', 'options')->first();
             return $this->successResponse($question, "Question Retrieved Successfully", 200);
+        }
+        if($validatedQuestion['flag']){
+            return $this->successResponse($validatedQuestion, $validatedQuestion['message'], 200);
         }
         return $this->errorResponse($validatedQuestion, $validatedQuestion['message'], 422);    
     }
@@ -146,7 +144,7 @@ class PlayQuizController extends Controller
             'variant_id' => 'required|exists:quiz_variants,id'
         ]);
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return $this->errorResponse([], $validator->errors(), 422);
         }
         
         $validated = $validator->validated();
@@ -160,10 +158,7 @@ class PlayQuizController extends Controller
         $user = Auth::user();
         // Check if user has enough funds
         if ($user->funds < $entryFee) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Insufficient funds to join the game'
-            ], 403);
+            return $this->errorResponse([], 'Insufficient funds to join the game', 403);
         }
 
         DB::beginTransaction();
@@ -172,6 +167,7 @@ class PlayQuizController extends Controller
             $userResponse = new UserResponse();
             $userResponse->quiz_id = $quiz->id;
             $userResponse->user_id = $user->id;
+            $userResponse->node_id = $quiz->node_id;
             $userResponse->quiz_variant_id = $variant->id;
             $userResponse->status = 'joined';
             $userResponse->save();

@@ -59,9 +59,17 @@ class UserController extends Controller
             'password' => 'required'
         ]);
 
-        $user = User::with('lifelines')->where('email', $request->login)
+        $user = User::with([
+            'lifelines',
+            'user_responses' => function($query) {
+                $query->select(['user_id', 'quiz_id', 'quiz_variant_id', 'score', 'status']);
+            }
+            ])->where('email', $request->login)
                     ->orWhere('mobile', $request->login)
                     ->first();
+
+        // Hide user_id from responses before returning
+        $user->user_responses->makeHidden('user_id');
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
@@ -78,8 +86,18 @@ class UserController extends Controller
     }
 
     public function fetchUser(Request $request){
+        $user = Auth::user()->load([
+            'lifelines', 
+            'user_responses' => function($query) {
+                $query->select(['user_id', 'node_id', 'quiz_variant_id', 'score', 'status']);
+            }
+        ]);
+
+        // Hide user_id from responses before returning
+        $user->user_responses->makeHidden('user_id');
+        
         return response()->json([
-            'user' => Auth::user()->load('lifelines')->makeHidden('password')
+            'user' => $user
         ]);
     }
 
@@ -104,20 +122,20 @@ class UserController extends Controller
         return response()->json(['message' => 'Mobile number verified successfully']);
     }
 
-    public function updatePaymentMode(Request $request){
+    public function updatePaymentUpi(Request $request){
         $validator = Validator::make($request->all(), [
             'upi_id' => 'required|string|max:225'
         ]);
 
         // If validation fails, return the error response
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return $this->errorResponse([], $validator->errors, 422);
         }
 
         $user = Auth::user();
         $user->update(['upi_id' => $request->upi_id]);
 
-        return $this->successResponse([], "Payment Mode has been updated", 200);
+        return $this->successResponse([], "UPI ID has been updated successfully", 200);
     }
 
     /**

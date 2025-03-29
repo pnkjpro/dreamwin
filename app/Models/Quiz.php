@@ -8,7 +8,8 @@ class Quiz extends Model
 {
     protected $fillable = [
         'category_id', 'title', 'description', 'banner_image',
-        'quizContents', 'spot_limit', 'entry_fees', 'prize_money', 'node_id'
+        'quizContents', 'spot_limit', 'entry_fees', 'prize_money', 'node_id',
+        'start_time', 'end_time', 'totalQuestion'
     ];
 
     protected $casts = [
@@ -25,5 +26,9 @@ class Quiz extends Model
 
     public function quiz_sheet(){
         return $this->hasOne(QuizSheet::class);
+    }
+
+    public function user_response(){
+        return $this->hasOne(UserResponse::class);
     }
 }

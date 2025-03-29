@@ -24,14 +24,24 @@ class TransactionController extends Controller
         }
         $data = $validator->validated();
         $user = Auth::user();
-
-        $transaction = FundTransaction::create([
-            'user_id' => $user->id,
-            'action' => $data['action'],
-            'amount' => $data['amount']
-        ]); 
-
-        return $this->successResponse($transaction, "transaction has been made", 201);
+        try {
+            $transaction = FundTransaction::create([
+                'user_id' => $user->id,
+                'action' => $data['action'],
+                'amount' => $data['amount']
+            ]); 
+    
+            $message = "";
+            if($data['action'] == 'deposit'){
+                $message = "Payment of ₹{$data['amount']} has been registered. Funds will be credited within 3 hours.";
+            }else if($data['action'] == 'withdraw'){
+                $message = "Withdrawal request for ₹{$data['amount']} has been submitted";
+            }
+    
+            return $this->successResponse($transaction, $message, 201);
+        } catch(Exception $e){
+            return $this->errorResponse([], "Something Went Wrong, Please Try Again", 500);
+        }
     }
 
     public function fundApproval(Request $request){
@@ -72,10 +82,17 @@ class TransactionController extends Controller
             return $this->successResponse($transaction, "Transaction has been {$data['change_approval']}", 201);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['error' => 'Something went wrong.'], 500);
+            return $this->errorResponse([], "Something Went Wrong!", 500);
         }
 
 
         return $this->successResponse($transaction, "Transaction has been {$data['change_approval']}", 201);
+    }
+
+    public function listTransactions(Request $request){
+        $user = Auth::user();
+        $transactions = FundTransaction::where('user_id', $user->id)->orderBy('id', 'DESC')->get();
+
+        return $this->successResponse($transactions, "Transactions has been fetched", 200);
     }
 }

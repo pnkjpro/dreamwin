@@ -96,16 +96,12 @@ class LifelineController extends Controller
             'reference_id' => $lifeline->id,
             'reference_type' => Lifeline::class
         ]);
-        
-        return response()->json([
-            'status' => 'success',
-            'message' => "{$request->quantity} {$lifeline->name} lifeline(s) purchased successfully",
-            'data' => [
-                'lifeline' => $lifeline->only(['id', 'name', 'description', 'icon']),
-                'quantity' => $request->quantity,
-                'remaining_points' => $user->points
-            ]
-        ]);
+
+        return $this->successResponse([
+            'lifeline' => $lifeline->only(['id', 'name', 'description', 'icon']),
+            'quantity' => $request->quantity,
+            'remaining_points' => $user->points
+        ], "{$request->quantity} {$lifeline->name} lifeline(s) purchased successfully", 200);
     }
 
     public function storeLifelineUsage(Request $request)

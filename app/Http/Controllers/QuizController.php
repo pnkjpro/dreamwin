@@ -9,6 +9,8 @@ use App\Models\Quiz;
 use App\Models\QuizVariant;
 use App\Models\UserResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Config;
+use App\Http\Resources\UserResponseResource;
 
 
 use Illuminate\Support\Facades\Validator;
@@ -39,7 +41,9 @@ class QuizController extends Controller
             // 'quizContents.*.correctAnswerId' => 'required|integer',
             'spot_limit' => 'required|integer',
             'entry_fees' => 'required|integer',
-            'prize_money' => 'required|integer'
+            'prize_money' => 'required|integer',
+            'start_time' => 'required|integer',
+            'end_time' => 'required|integer'
         ]);
 
         if ($validator->fails()) {
@@ -48,6 +52,7 @@ class QuizController extends Controller
 
         $data = $validator->validated();
         $data['node_id'] = $this->generateNodeId();
+        $data['totalQuestion'] = count($data['quizContents']);
 
         $quiz = Quiz::create($data);
 
@@ -164,5 +169,20 @@ class QuizController extends Controller
     {
         $quiz->delete();
         return $this->successResponse(null, "Quiz has been deleted", 200);
+    }
+
+    // Create a UserResponseResource
+    public function responseList(Request $request)
+    {
+        $user = Auth::user();
+        $responses = UserResponse::with('quiz')
+            ->where('user_id', $user->id)
+            ->get();
+            
+        return $this->successResponse(
+            UserResponseResource::collection($responses), 
+            "Responses has been fetched", 
+            200
+        );
     }
 }

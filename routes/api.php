@@ -31,6 +31,7 @@ Route::prefix('quiz')->group(function(){
     Route::get('/show', [QuizController::class, 'quizByNodeId']);
     Route::get('/contest', [QuizController::class, 'listVariant']);
     Route::post('/variant/create', [QuizController::class, 'createVariant']);
+    Route::middleware('auth:sanctum')->get('/responses/list', [QuizController::class, 'responseList']);
 });
 
 
@@ -49,12 +50,13 @@ Route::prefix('users')->group(function(){
     Route::middleware('auth:sanctum')->get('/user', [UserController::class, 'fetchUser']);
     Route::post('/create', [UserController::class, 'register']);
     Route::post('/login', [UserController::class, 'login']);
-    Route::middleware('auth:sanctum')->post('/update/payment/mode', [UserController::class, 'updatePaymentMode']);
+    Route::middleware('auth:sanctum')->post('/update/upi', [UserController::class, 'updatePaymentUpi']);
 });
 
 Route::middleware('auth:sanctum')->prefix('funds')->group(function(){
     Route::post('/transaction', [TransactionController::class, 'make_transaction']);
     Route::post('/transaction/approval', [TransactionController::class, 'fundApproval']);
+    Route::get('/transaction/list', [TransactionController::class, 'listTransactions']);
 });
 
 Route::middleware('auth:sanctum')->prefix('play')->group(function(){
