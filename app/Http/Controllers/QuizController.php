@@ -10,6 +10,7 @@ use App\Models\QuizVariant;
 use App\Models\UserResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use App\Http\Resources\UserResponseResource;
 
 
@@ -132,6 +133,48 @@ class QuizController extends Controller
 
         return $question;
         
+    }
+
+    public function leaderboard(Request $request){
+        $validator = Validator::make($request->all(), [
+            'node_id' => 'required|exists:user_responses,node_id'
+        ]);
+
+        if($validator->fails()){
+            return $this->errorResponse([], $e->getMessage(), 422);
+        }
+
+        $data = $validator->validated();
+        $user = Auth::user();
+
+        //you can make all user_responses's status to complete if now_time > quiz.quiz_end_time.
+
+        $leaderboard = DB::table('user_responses as ur')
+            ->join('users as u', function($join){
+               $join->on('u.id', '=', 'ur.user_id');
+            })->where('ur.node_id', $data['node_id'])
+                ->selectRaw(
+                    'u.name, 
+                    ur.score,
+                    CASE WHEN u.id = ? THEN true ELSE false END as isUser', 
+                    [$user->id]
+                    )
+                ->limit(10)
+                ->orderBy('ur.score', 'DESC')
+                ->get();
+
+        $query = UserResponse::where('node_id', $data['node_id']);
+        $count = $query->count();
+        $userPoints = $query->where('user_id', $user->id)->select('score')->first();
+        $result = [
+            'topPlayers' => $leaderboard,
+            'totalParticipants' => $count,
+            'userPoints' => $userPoints
+        ];
+        if($leaderboard->first()){
+            return $this->successResponse($result, "leaderboard has been prepared", 200);
+        }
+        return $this->errorResponse([], "leaderboard has not prepared yet!", 403);
     }
 
     public function listVariant(Request $request){

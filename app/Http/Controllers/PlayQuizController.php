@@ -34,7 +34,9 @@ class PlayQuizController extends Controller
         $user = Auth::user();
         $quiz = Quiz::where('node_id', $requestData['node_id'])->first();
         $quizId = $quiz->id;
-        $isUserResponseExists = UserResponse::where('quiz_id', $quizId)->whereIn('status', ['initiated', 'completed'])->first();
+        $isUserResponseExists = UserResponse::where('quiz_id', $quizId)
+                                            ->where('user_id', $user->id)
+                                            ->whereIn('status', ['initiated', 'completed'])->first();
         if(isset($isUserResponseExists)){
             return $this->errorResponse([], "Game Already Started!", 422);
         }
@@ -147,15 +149,17 @@ class PlayQuizController extends Controller
             return $this->errorResponse([], $validator->errors(), 422);
         }
         
+        $user = Auth::user();
         $validated = $validator->validated();
         $quiz = Quiz::where('node_id', $validated['node_id'])->first();
-        $isUserResponseExists = UserResponse::where('quiz_id', $quiz->id)->whereIn('status', ['joined', 'initiated', 'completed'])->first();
+        $isUserResponseExists = UserResponse::where('quiz_id', $quiz->id)
+                                            ->where('user_id', $user->id)
+                                            ->whereIn('status', ['joined', 'initiated', 'completed'])->first();
         if(isset($isUserResponseExists)){
             return $this->errorResponse([], "You have already Joined the Game", 422);
         }
         $variant = QuizVariant::where('quiz_id', $quiz->id)->where('id', $validated['variant_id'])->first();
         $entryFee = $variant->entry_fee;
-        $user = Auth::user();
         // Check if user has enough funds
         if ($user->funds < $entryFee) {
             return $this->errorResponse([], 'Insufficient funds to join the game', 403);

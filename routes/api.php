@@ -32,6 +32,7 @@ Route::prefix('quiz')->group(function(){
     Route::get('/contest', [QuizController::class, 'listVariant']);
     Route::post('/variant/create', [QuizController::class, 'createVariant']);
     Route::middleware('auth:sanctum')->get('/responses/list', [QuizController::class, 'responseList']);
+    Route::middleware('auth:sanctum')->post('/leaderboard', [QuizController::class, 'leaderboard']);
 });
 
 
