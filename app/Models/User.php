@@ -70,4 +70,8 @@ class User extends Authenticatable
             ->where('quantity', '>', 0)
             ->exists();
     }
+
+    public function isAdmin(){
+        return $this->is_admin === 1;
+    }
 }

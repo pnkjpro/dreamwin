@@ -16,6 +16,7 @@ return new class extends Migration
             $table->timestamp('mobile_verified_at')->nullable()->after('mobile');
             $table->integer('funds')->default(0)->after('mobile_verified_at');
             $table->string('upi_id')->nullable()->after('funds');
+            $table->boolean('is_admin')->default(0);
         });
     }
 

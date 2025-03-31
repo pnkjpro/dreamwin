@@ -9,7 +9,6 @@ use App\Http\Controllers\PlayQuizController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\Auth\UserController;
 use Illuminate\Support\Facades\Route;
-
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
@@ -24,15 +23,15 @@ Route::get('/user', function (Request $request) {
 // });
 
 
-Route::prefix('quiz')->group(function(){
+Route::middleware(['auth:sanctum', 'isAdmin'])->prefix('quiz')->group(function(){
     Route::get('/', [QuizController::class, 'index']);
     Route::post('/create', [QuizController::class, 'store']);
     Route::post('/submit', [QuizController::class, 'userResponse']);
     Route::get('/show', [QuizController::class, 'quizByNodeId']);
     Route::get('/contest', [QuizController::class, 'listVariant']);
     Route::post('/variant/create', [QuizController::class, 'createVariant']);
-    Route::middleware('auth:sanctum')->get('/responses/list', [QuizController::class, 'responseList']);
-    Route::middleware('auth:sanctum')->post('/leaderboard', [QuizController::class, 'leaderboard']);
+    Route::get('/responses/list', [QuizController::class, 'responseList']);
+    Route::post('/leaderboard', [QuizController::class, 'leaderboard']);
 });
 
 
