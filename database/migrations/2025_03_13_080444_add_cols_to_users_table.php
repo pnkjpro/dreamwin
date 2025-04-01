@@ -17,6 +17,9 @@ return new class extends Migration
             $table->integer('funds')->default(0)->after('mobile_verified_at');
             $table->string('upi_id')->nullable()->after('funds');
             $table->boolean('is_admin')->default(0);
+            $table->string('refer_code', 20)->nullable()->after('funds');
+            $table->foreignId('refer_by')->nullable()->constrained('users', 'id')->onDelete('set null')->after('refer_code');
+            $table->boolean('is_reward_given')->default(0)->after('refer_by');
         });
     }
 

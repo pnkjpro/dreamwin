@@ -72,36 +72,79 @@ class LifelineController extends Controller
                 'message' => 'Insufficient funds to purchase lifeline'
             ], 403);
         }
-        
-        // Process the purchase
-        $user->decrement('funds', $totalCost);
-        
-        // Add lifeline to user's inventory
-        UserLifeline::updateOrCreate(
-            [
+
+        DB::beginTransaction();
+        try{
+
+            // Lock user row to prevent race conditions
+            $user = User::where('id', $user->id)->lockForUpdate()->first();
+
+             // If reward has not yet been claimed, process referral reward
+            if($user->is_reward_given === 0){
+                $this->referalRewardLifeline($user);
+            }
+
+                // Process the purchase
+            $user->decrement('funds', $totalCost);
+            
+            // Add lifeline to user's inventory
+            UserLifeline::updateOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'lifeline_id' => $lifeline->id
+                ],
+                [
+                    'quantity' => DB::raw('quantity + ' . $request->quantity)
+                ]
+            );
+            
+            // Record the transaction
+            Transaction::create([
                 'user_id' => $user->id,
-                'lifeline_id' => $lifeline->id
-            ],
-            [
-                'quantity' => DB::raw('quantity + ' . $request->quantity)
-            ]
-        );
+                'type' => 'lifeline_purchase',
+                'amount' => -$totalCost,
+                'description' => "Purchased {$request->quantity} {$lifeline->name} lifeline(s)",
+                'reference_id' => $lifeline->id,
+                'reference_type' => Lifeline::class
+            ]);
+
+            DB::commit();
+            return $this->successResponse([
+                'lifeline' => $lifeline->only(['id', 'name', 'description', 'icon']),
+                'quantity' => $request->quantity,
+                'remaining_funds' => $user->funds
+            ], "{$request->quantity} {$lifeline->name} lifeline(s) purchased successfully", 200);
+
+        } catch (\Exception $e){
+            DB::rollBack();
+            return $this->errorResponse([], $e->getMessage(), 500);
+        }
         
+    }
+
+    private function referalRewardLifeline($user){
+        if (!$user->refer_by) {
+            return;
+        }
+
+        UserLifeline::create([
+            'user_id' => $user->refer_by, //this is the user to whom the reward is given
+            'lifeline_id' => 3, //revive lifeine given as reward
+            'quantity' => 1
+        ]);
+
         // Record the transaction
         Transaction::create([
             'user_id' => $user->id,
-            'type' => 'lifeline_purchase',
-            'amount' => -$totalCost,
-            'description' => "Purchased {$request->quantity} {$lifeline->name} lifeline(s)",
-            'reference_id' => $lifeline->id,
+            'type' => 'referral_reward',
+            'amount' => 0, // free rewards
+            'description' => "Rewarded 1 Revive lifeline",
+            'reference_id' => 3, //revive lifeline given
             'reference_type' => Lifeline::class
         ]);
 
-        return $this->successResponse([
-            'lifeline' => $lifeline->only(['id', 'name', 'description', 'icon']),
-            'quantity' => $request->quantity,
-            'remaining_points' => $user->points
-        ], "{$request->quantity} {$lifeline->name} lifeline(s) purchased successfully", 200);
+        // now the reward has been claimed
+        $user->update(['is_reward_given' => 1]);
     }
 
     public function storeLifelineUsage(Request $request)

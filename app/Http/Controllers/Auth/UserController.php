@@ -27,6 +27,7 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email',
             'mobile' => 'nullable|numeric|unique:users,mobile',
             'password' => 'required|min:6|confirmed',
+            'refer_code' => 'sometimes|max:8|exists:users,refer_code'
         ]);
 
         // If validation fails, return the error response
@@ -34,11 +35,15 @@ class UserController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
+        $referBy = User::where('refer_code',$request->refer_code)->first()->id;
+
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'mobile' => $request->mobile,
             'password' => Hash::make($request->password),
+            'refer_code' => $this->generateReferralCode(),
+            'refer_by' => $referBy
         ]);
 
         $token = $user->createToken('auth_token')->plainTextToken;
@@ -47,6 +52,15 @@ class UserController extends Controller
             'user' => $user,
             'token' => $token
         ], 201);
+    }
+
+    public function generateReferralCode()
+    {
+        $code = strtoupper(Str::random(8));
+        while (User::where('referral_code', $code)->exists()) {
+            $code = strtoupper(Str::random(8));
+        }  
+        return $code;
     }
 
     /**
