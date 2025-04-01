@@ -80,9 +80,10 @@ class LifelineController extends Controller
             $user = User::where('id', $user->id)->lockForUpdate()->first();
 
              // If reward has not yet been claimed, process referral reward
-            if($user->is_reward_given === 0){
-                $this->referalRewardLifeline($user);
-            }
+            // Disable this feature for now
+             // if($user->is_reward_given === 0){
+            //     $this->referalRewardLifeline($user);
+            // }
 
                 // Process the purchase
             $user->decrement('funds', $totalCost);
