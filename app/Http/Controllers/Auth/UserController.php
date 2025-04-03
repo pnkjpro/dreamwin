@@ -33,7 +33,7 @@ class UserController extends Controller
 
         // If validation fails, return the error response
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return $this->errorResponse([], $validator->errors(), 422);
         }
 
         $referBy = User::where('refer_code',$request->refer_code)->first()->id;
@@ -49,10 +49,10 @@ class UserController extends Controller
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json([
+        return $this->successResponse([
             'user' => $user,
             'token' => $token
-        ], 201);
+        ], "user created successfully!", 201);
     }
 
     public function generateReferralCode()
@@ -87,17 +87,17 @@ class UserController extends Controller
         $user->user_responses->makeHidden('user_id');
 
         if (!$user || !Hash::check($request->password, $user->password)) {
-            throw ValidationException::withMessages([
-                'login' => ['Invalid credentials.'],
-            ]);
+            $this->errorResponse([], "Invalid Credential", 422);
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json([
+        return $this->successResponse([
             'user' => $user,
             'token' => $token
-        ]);
+        ], "user logged in successfully!", 200);
+
+
     }
 
     public function fetchUser(Request $request){
