@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:8100', 'http://localhost:5173', 'http://dreamwin.local:8000'],
+    'allowed_origins' => ['http://localhost:8100', 'http://localhost:5173', 'http://dreamwin.local:8000', 'https://www.himpri.com', 'https://himpri.com'],
 
     'allowed_origins_patterns' => [],
 
