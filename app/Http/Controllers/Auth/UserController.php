@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 use App\Traits\JsonResponseTrait;
 
@@ -57,7 +58,7 @@ class UserController extends Controller
     public function generateReferralCode()
     {
         $code = strtoupper(Str::random(8));
-        while (User::where('referral_code', $code)->exists()) {
+        while (User::where('refer_by', $code)->exists()) {
             $code = strtoupper(Str::random(8));
         }  
         return $code;
