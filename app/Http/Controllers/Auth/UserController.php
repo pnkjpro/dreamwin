@@ -36,7 +36,10 @@ class UserController extends Controller
             return $this->errorResponse([], $validator->errors(), 422);
         }
 
-        $referBy = User::where('refer_code',$request->refer_code)->first()->id;
+        $referBy = null;
+        if(isset($request->refer_code)){
+            $referBy = User::where('refer_code',$request->refer_code)->first()->id;
+        }
 
         $user = User::create([
             'name' => $request->name,
@@ -87,7 +90,7 @@ class UserController extends Controller
         $user->user_responses->makeHidden('user_id');
 
         if (!$user || !Hash::check($request->password, $user->password)) {
-            $this->errorResponse([], "Invalid Credential", 422);
+            return $this->errorResponse([], "Invalid Credential", 422);
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
