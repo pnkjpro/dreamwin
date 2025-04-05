@@ -80,7 +80,7 @@ class UserController extends Controller
         $user = User::with([
             'lifelines',
             'user_responses' => function($query) {
-                $query->select(['user_id', 'quiz_id', 'quiz_variant_id', 'score', 'status']);
+                $query->select(['user_id', 'node_id', 'quiz_variant_id', 'score', 'status']);
             }
             ])->where('email', $request->login)
                     ->orWhere('mobile', $request->login)

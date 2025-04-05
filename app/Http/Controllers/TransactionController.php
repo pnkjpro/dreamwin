@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 use App\Models\FundTransaction;
+use App\Models\User;
 
 use App\Traits\JsonResponseTrait;
 
@@ -87,6 +89,17 @@ class TransactionController extends Controller
 
 
         return $this->successResponse($transaction, "Transaction has been {$data['change_approval']}", 201);
+    }
+
+    public function listAllTransactions(Request $request){
+        // $transactions = FundTransaction::orderBy('created_at', 'DESC')->get();
+        $transactions = DB::table('fund_transactions as ft')
+                            ->leftjoin('users as u', function($join){
+                                    $join->on('u.id', '=', 'ft.user_id');
+                            })
+                            ->select('ft.id','ft.user_id','u.name', 'u.upi_id', 'ft.action', 'ft.amount', 'ft.approved_status')
+                            ->orderBy('ft.id','DESC')->get();
+        return $this->successResponse($transactions, "Latest transactions has been fetched", 200);
     }
 
     public function listTransactions(Request $request){

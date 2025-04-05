@@ -28,20 +28,19 @@ class CategoryController extends Controller
     {
         $validator = Validator::make($request->all(),[
             'name' => 'required|string|max:255',
-            'slug' => 'nullable|string|unique:categories,slug',
             'description' => 'nullable|string',
-            'icon' => 'nullable|string',
             'icon_color' => 'nullable|string',
-            'banner_image' => 'nullable|string',
-            'is_active' => 'required|in:0,1',
-            'display_order' => 'required|integer',
+            'icon' => 'nullable|file|image|max:2048',
+            'banner_image' => 'nullable|file|image|max:2048'
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $slug = $request->slug ?: Str::slug($request->name);
+        $validated = $validator->validated();
+
+        $slug = $this->generateSlug($request->name);
         $originalSlug = $slug;
         $count = 1;
         while (Category::where('slug', $slug)->exists()) {
@@ -49,18 +48,37 @@ class CategoryController extends Controller
             $count++;
         }
 
+        // Handle file uploads with the slug as the filename
+        $iconPath = null;
+        if ($request->hasFile('icon') && $request->file('icon')->isValid()) {
+            $extension = $request->file('icon')->getClientOriginalExtension();
+            $filename = $slug . '.' . $extension;
+            $iconPath = $request->file('icon')->storeAs('categories/icons', $filename, 'public');
+        }
+
+        $bannerPath = null;
+        if ($request->hasFile('banner_image') && $request->file('banner_image')->isValid()) {
+            $extension = $request->file('banner_image')->getClientOriginalExtension();
+            $filename = $slug . '-banner.' . $extension;
+            $bannerPath = $request->file('banner_image')->storeAs('categories/banners', $filename, 'public');
+        }
+
         $category = Category::create([
             'name' => $request->name,
             'slug' => $slug,
             'description' => $request->description,
-            'icon' => $request->icon,
+            'icon' => $iconPath, // Store the file path
             'icon_color' => $request->icon_color,
-            'banner_image' => $request->banner_image,
-            'is_active' => $request->is_active,
-            'display_order' => $request->display_order,
+            'banner_image' => $bannerPath, // Store the file path
+            'is_active' => $request->is_active ?? true, // Default to true if not provided
+            'display_order' => 1,
         ]);
-
         return $this->successResponse($category, "Record has been created", 201);
+    }
+
+    private function generateSlug($name)
+    {
+        return Str::slug($name, '-');
     }
 
     public function show(Category $category)

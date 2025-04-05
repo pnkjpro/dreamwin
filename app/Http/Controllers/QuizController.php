@@ -35,6 +35,7 @@ class QuizController extends Controller
             'description' => 'required|string',
             'banner_image' => 'nullable|string',
             'quizContents' => 'required|array',
+            'quizVariants' => 'required|array',
             // 'quizContents.*.question' => 'required|string',
             // 'quizContents.*.options' => 'required|array|min:2',
             // 'quizContents.*.options.*.id' => 'required|integer',
@@ -43,8 +44,9 @@ class QuizController extends Controller
             'spot_limit' => 'required|integer',
             'entry_fees' => 'required|integer',
             'prize_money' => 'required|integer',
-            'start_time' => 'required|integer',
-            'end_time' => 'required|integer'
+            'start_time' => 'required',
+            'end_time' => 'required',
+            'banner_image' => 'nullable|file|image|max:2048'
         ]);
 
         if ($validator->fails()) {
@@ -54,8 +56,29 @@ class QuizController extends Controller
         $data = $validator->validated();
         $data['node_id'] = $this->generateNodeId();
         $data['totalQuestion'] = count($data['quizContents']);
+        $data['start_time'] = strtotime($request->start_time);
+        $data['end_time'] = strtotime($request->end_time);
+        $bannerPath = null;
+        if ($request->hasFile('banner_image') && $request->file('banner_image')->isValid()) {
+            $extension = $request->file('banner_image')->getClientOriginalExtension();
+            $filename = $data['node_id'] . '-banner.' . $extension;
+            $bannerPath = $request->file('banner_image')->storeAs('quiz/banners', $filename, 'public');
+        }
+        $data['banner_image'] = $bannerPath;
+
 
         $quiz = Quiz::create($data);
+
+        foreach($data['quizVariants'] as $variant){
+            $this->createVariant(new Request([
+                'quiz_id' => $quiz->id,
+                'entry_fee' => $variant['entry_fee'],
+                'prize' => $variant['prize'],
+                'prize_contents' => $variant['prize_contents'],
+                'slot_limit' => $variant['slot_limit'],
+                'status' => 'active'
+            ]));
+        }
 
         return $this->successResponse($quiz, "Quiz has been created", 201);
     }

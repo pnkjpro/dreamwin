@@ -23,21 +23,25 @@ Route::get('/user', function (Request $request) {
 // });
 
 
-Route::middleware('auth:sanctum')->prefix('quiz')->group(function(){
+Route::prefix('quiz')->group(function(){
     Route::get('/', [QuizController::class, 'index']);
-    Route::middleware('isAdmin')->post('/create', [QuizController::class, 'store']);
-    Route::post('/submit', [QuizController::class, 'userResponse']);
+    Route::middleware('auth:sanctum')->post('/submit', [QuizController::class, 'userResponse']);
     Route::get('/show', [QuizController::class, 'quizByNodeId']);
     Route::get('/contest', [QuizController::class, 'listVariant']);
-    Route::middleware('isAdmin')->post('/variant/create', [QuizController::class, 'createVariant']);
-    Route::get('/responses/list', [QuizController::class, 'responseList']);
-    Route::post('/leaderboard', [QuizController::class, 'leaderboard']);
+    Route::middleware('auth:sanctum')->get('/responses/list', [QuizController::class, 'responseList']);
+    Route::middleware('auth:sanctum')->post('/leaderboard', [QuizController::class, 'leaderboard']);
 });
 
+Route::middleware(['auth:sanctum','isAdmin'])->prefix('admin')->group(function(){
+    Route::post('/quiz/create', [QuizController::class, 'store']);
+    Route::post('/variant/create', [QuizController::class, 'createVariant']);
+    Route::post('/transaction/approval', [TransactionController::class, 'fundApproval']);
+    Route::get('/transaction/list/all', [TransactionController::class, 'listAllTransactions']);
+    Route::post('/category/create', [CategoryController::class, 'store']);
+});
 
 Route::prefix('category')->group(function(){
-    Route::get('/', [CategoryController::class, 'index']);
-    Route::post('/create', [CategoryController::class, 'store']);
+    Route::get('/', [CategoryController::class, 'index']);  
 });
 
 Route::middleware('auth:sanctum')->prefix('lifeline')->group(function(){
@@ -56,7 +60,6 @@ Route::prefix('users')->group(function(){
 
 Route::middleware('auth:sanctum')->prefix('funds')->group(function(){
     Route::post('/transaction', [TransactionController::class, 'make_transaction']);
-    Route::post('/transaction/approval', [TransactionController::class, 'fundApproval']);
     Route::get('/transaction/list', [TransactionController::class, 'listTransactions']);
 });
 
