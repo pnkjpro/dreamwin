@@ -46,6 +46,7 @@ class QuizController extends Controller
             'prize_money' => 'required|integer',
             'start_time' => 'required',
             'end_time' => 'required',
+            'quiz_timer' => 'required|integer',
             'banner_image' => 'nullable|file|image|max:2048'
         ]);
 

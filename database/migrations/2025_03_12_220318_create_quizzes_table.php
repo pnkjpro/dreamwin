@@ -25,6 +25,7 @@ return new class extends Migration
             $table->enum('is_active', [0, 1])->default(1);
             $table->unsignedBigInteger('start_time');
             $table->unsignedBigInteger('end_time');
+            $table->integer('quiz_timer')->default(30);
             $table->integer('totalQuestion')->default(0);
             $table->timestamps();
         });
