@@ -8,7 +8,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
 use App\Traits\JsonResponseTrait;
@@ -41,13 +43,18 @@ class UserController extends Controller
             $referBy = User::where('refer_code',$request->refer_code)->first()->id;
         }
 
+        $avatars = Config::get('himpri.constant.avatars');
+        $randomAvatar = 'storage/avatars/' . Arr::random($avatars);
+
+
         $user = User::create([
             'name' => $request->name,
+            'avatar' => $randomAvatar,
             'email' => $request->email,
             'mobile' => $request->mobile,
             'password' => Hash::make($request->password),
             'refer_code' => $this->generateReferralCode(),
-            'refer_by' => $referBy
+            'refer_by' => $referBy,
         ]);
 
         $token = $user->createToken('auth_token')->plainTextToken;

@@ -12,6 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
+            $table->string('avatar')->nullable()->after('name');
             $table->string('mobile')->nullable()->after('email_verified_at');
             $table->timestamp('mobile_verified_at')->nullable()->after('mobile');
             $table->integer('funds')->default(0)->after('mobile_verified_at');
