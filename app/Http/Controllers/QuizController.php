@@ -20,9 +20,18 @@ use App\Traits\JsonResponseTrait;
 class QuizController extends Controller
 {
     use JsonResponseTrait;
-    public function index()
+    public function index(Request $request)
     {
-        $quizzes = Quiz::with(['category', 'quiz_variants'])->get()->makeHidden('quizContents');
+        $page = $request->input('page', 1);
+        $limit = 2; 
+        $offset = ($page - 1) * $limit; 
+        $quizzes = Quiz::with(['category', 'quiz_variants'])
+                        ->where('end_time', '>', time())
+                        ->orderBy('start_time', 'ASC')
+                        ->limit(2)
+                        ->offset($offset)
+                        ->get()
+                        ->makeHidden('quizContents');
         return $this->successResponse($quizzes, "Records has been founded", 200);
     }
 

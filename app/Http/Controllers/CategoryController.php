@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Category;
+use App\Models\Quiz;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 
@@ -120,5 +121,19 @@ class CategoryController extends Controller
     {
         $category->delete();
         return $this->successResponse(null, "Record has been deleted", 200);
+    }
+
+    public function quizzesByCategoryId(Request $request){
+        $categoryId = $request->input('category_id', '');
+        if($categoryId){
+            $quizzes = Quiz::with(['category', 'quiz_variants'])
+                            ->where('end_time', '>', time())
+                            ->where('category_id', $categoryId)
+                            ->orderBy('start_time', 'ASC')
+                            ->get()
+                            ->makeHidden('quizContents');
+            return $this->successResponse($quizzes, "Records has been founded", 200);
+        }
+        return $this->errorResponse([], "Invalid Category", 403);
     }
 }

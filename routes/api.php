@@ -7,6 +7,7 @@ use App\Http\Controllers\LifelineController;
 use App\Http\Controllers\LifelineUsageController;
 use App\Http\Controllers\PlayQuizController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Auth\UserController;
 use Illuminate\Support\Facades\Route;
 Route::get('/user', function (Request $request) {
@@ -37,11 +38,14 @@ Route::middleware(['auth:sanctum','isAdmin'])->prefix('admin')->group(function()
     Route::post('/variant/create', [QuizController::class, 'createVariant']);
     Route::post('/transaction/approval', [TransactionController::class, 'fundApproval']);
     Route::get('/transaction/list/all', [TransactionController::class, 'listAllTransactions']);
+    Route::post('/banner/update', [HomeController::class, 'updateBanner']);
     Route::post('/category/create', [CategoryController::class, 'store']);
+    Route::post('/howVideos/create', [HomeController::class, 'updateHowVideos']);
 });
 
 Route::prefix('category')->group(function(){
     Route::get('/', [CategoryController::class, 'index']);  
+    Route::get('/quiz/list', [CategoryController::class, 'quizzesByCategoryId']);
 });
 
 Route::middleware('auth:sanctum')->prefix('lifeline')->group(function(){
@@ -68,3 +72,6 @@ Route::middleware('auth:sanctum')->prefix('play')->group(function(){
     Route::post('/', [PlayQuizController::class, 'play_quiz']);
     Route::post('/next', [PlayQuizController::class, 'nextQuestion']);
 });
+
+Route::get('banner/list', [HomeController::class, 'listBanner']);
+Route::get('how/videos', [HomeController::class, 'listHowVideos']);
