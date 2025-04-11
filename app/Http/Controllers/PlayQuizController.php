@@ -128,6 +128,11 @@ class PlayQuizController extends Controller
                     }
                     
                 } else {
+                    // In free game, we're not submitting quiz, user will continue to play.
+                    if($quiz->entry_fees == 0){
+                        return ['flag' => false, 'message' => "Incorrect answer", 'is_nextQuestion' => true];
+                    }
+                    // ===================================================================
                     $userResponse->update(['status' => 'completed']);
                     return ['flag' => false, 'message' => "Incorrect answer, quiz submitted", 'is_nextQuestion' => false];
                 }
