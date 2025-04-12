@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Traits\JsonResponseTrait;
 use App\Models\HomeBanner;
+use App\Models\HowVideos;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -67,7 +68,7 @@ class HomeController extends Controller
         }
         $data = $validator->validated();
 
-        $video = HowVideo::findOrFail($data['video_id']);
+        $video = HowVideos::findOrFail($data['video_id']);
         $video->update([
             'title' => data['title'],
             'description' => data['description'],
@@ -81,7 +82,7 @@ class HomeController extends Controller
     }
 
     public function listHowVideos(){
-        $videos = Videos::all();
+        $videos = HowVideos::all();
         return $this->successResponse($videos, 'videos has been fetched', 200);
     }
 

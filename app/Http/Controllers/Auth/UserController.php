@@ -40,11 +40,14 @@ class UserController extends Controller
 
         $referBy = null;
         if(isset($request->refer_code)){
-            $referBy = User::where('refer_code',$request->refer_code)->first()->id;
+            $referBy = User::where('refer_code',$request->refer_code)->first();
+            $referBy->increment('funds', 10); // increase the amount by 10 when referred!
+            $referById = User::where('refer_code',$request->refer_code)->first()->id;
         }
 
         $avatars = Config::get('himpri.constant.avatars');
-        $randomAvatar = 'storage/avatars/' . Arr::random($avatars);
+        $randomAvatar = '/avatars/' . Arr::random($avatars);
+
 
 
         $user = User::create([
@@ -54,7 +57,7 @@ class UserController extends Controller
             'mobile' => $request->mobile,
             'password' => Hash::make($request->password),
             'refer_code' => $this->generateReferralCode(),
-            'refer_by' => $referBy,
+            'refer_by' => isset($referById) ? $referById : null,
         ]);
 
         $token = $user->createToken('auth_token')->plainTextToken;
@@ -92,6 +95,9 @@ class UserController extends Controller
             ])->where('email', $request->login)
                     ->orWhere('mobile', $request->login)
                     ->first();
+        if(empty($user)){
+            return $this->errorResponse([], "User not found", 403);
+        }
 
         // Hide user_id from responses before returning
         $user->user_responses->makeHidden('user_id');
