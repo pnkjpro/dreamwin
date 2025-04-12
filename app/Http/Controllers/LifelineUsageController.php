@@ -108,7 +108,7 @@ class LifelineUsageController extends Controller
 
     // Check if specific lifeline has already been used in the current quiz
     public function isAlreadyUsedSpecificLifeline($userId, $lifelineId, $userResponseId){
-        $lifelines = LifelineUsage::where('user_id', $userId)
+        return LifelineUsage::where('user_id', $userId)
                             ->where('lifeline_id', $lifelineId)
                             ->where('user_response_id', $userResponseId)
                             ->exists();

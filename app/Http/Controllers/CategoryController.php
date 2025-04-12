@@ -29,14 +29,14 @@ class CategoryController extends Controller
     {
         $validator = Validator::make($request->all(),[
             'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
+            'description' => 'required|string',
             'icon_color' => 'nullable|string',
             'icon' => 'nullable|file|image|max:2048',
             'banner_image' => 'nullable|file|image|max:2048'
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return $this->errorResponse([], $validator->errors(), 422);
         }
 
         $validated = $validator->validated();

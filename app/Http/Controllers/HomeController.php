@@ -21,7 +21,7 @@ class HomeController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return $this->errorResponse([], $validator->errors(), 422);
         }
 
         $data = $validator->validated();
@@ -42,13 +42,10 @@ class HomeController extends Controller
 
         $homeBanner->update([
             'title' => $data['title'],
-            'banner_image' => $data['banner_image'],
+            'banner_path' => $data['banner_image'],
         ]);
 
-        return response()->json([
-            'message' => 'Banner updated successfully',
-            'banner' => $homeBanner
-        ]);
+        return $this->successResponse([], 'Banner updated successfully!', 200);
     }
 
     public function listBanner(){
@@ -64,21 +61,18 @@ class HomeController extends Controller
             'youtube_id' => 'required|string|max:225'
         ]);
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return $this->errorResponse([], $validator->errors(), 422);
         }
         $data = $validator->validated();
 
         $video = HowVideos::findOrFail($data['video_id']);
         $video->update([
-            'title' => data['title'],
-            'description' => data['description'],
-            'youtube_id' => data['youtube_id']
+            'title' => $data['title'],
+            'description' => $data['description'],
+            'youtube_id' => $data['youtube_id']
         ]);
 
-        return response()->json([
-            'message' => 'Video updated successfully',
-            'banner' => $video
-        ]);
+        return $this->successResponse([], 'Video updated successfully!', 200);
     }
 
     public function listHowVideos(){
