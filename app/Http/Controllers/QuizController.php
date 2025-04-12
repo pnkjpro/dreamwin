@@ -23,16 +23,22 @@ class QuizController extends Controller
     public function index(Request $request)
     {
         $page = $request->input('page', 1);
-        $limit = 2; 
+        $limit = Config::get('himpri.constant.paginationLimit'); 
         $offset = ($page - 1) * $limit; 
         $quizzes = Quiz::with(['category', 'quiz_variants'])
                         ->where('end_time', '>', time())
-                        ->orderBy('start_time', 'ASC')
-                        ->limit(2)
-                        ->offset($offset)
-                        ->get()
-                        ->makeHidden('quizContents');
-        return $this->successResponse($quizzes, "Records has been founded", 200);
+                        ->orderBy('start_time', 'ASC');
+        // $quizzes = Quiz::with(['category', 'quiz_variants'])
+        //                 ->where('end_time', '>', time())
+        //                 ->orderBy('start_time', 'ASC')
+        //                 ->limit($limit)
+        //                 ->offset($offset)
+        //                 ->get()
+        //                 ->makeHidden('quizContents');
+        $totalCount = $quizzes->count();
+        $quizzes = $quizzes->limit($limit)->offset($offset)->get()->makeHidden('quizContents');
+
+        return $this->successResponse([$quizzes, $totalCount], "Records has been founded", 200);
     }
 
     public function store(Request $request)
