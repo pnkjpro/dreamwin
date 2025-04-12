@@ -70,8 +70,8 @@ class LifelineUsageController extends Controller
         }
         
         // Check if this lifeline was already used for this question
-        if ($this->hasUsedLifelineForQuestion($user->id, $request->lifeline_id, $request->question_id, $userResponse->id)) {
-            return $this->errorResponse([], 'This lifeline has already been used for this question', 403);
+        if ($this->hasUsedLifelineForQuestion($user->id, $request->question_id, $userResponse->id)) {
+            return $this->errorResponse([], 'The lifeline has already been used for this question', 403);
         }
 
         // Process the specific lifeline
@@ -98,9 +98,8 @@ class LifelineUsageController extends Controller
     }
 
     // Check if lifeline was used for a specific question
-    public function hasUsedLifelineForQuestion($userId, $lifelineId, $questionId, $userResponseId) {
+    public function hasUsedLifelineForQuestion($userId, $questionId, $userResponseId) {
         return LifelineUsage::where('user_id', $userId) //while its not necessary to compare because userResponseId already fetched from authUser
-                        ->where('lifeline_id', $lifelineId)
                         ->where('question_id', $questionId)
                         ->where('user_response_id', $userResponseId)
                         ->exists();
