@@ -74,6 +74,7 @@ class QuizController extends Controller
         $data['totalQuestion'] = count($data['quizContents']);
         $data['start_time'] = strtotime($request->start_time);
         $data['end_time'] = strtotime($request->end_time);
+        $data['quiz_over_at'] = $data['end_time'] + ($data['totalQuestion'] * $data['quiz_timer']) + 300;
         $bannerPath = null;
         if ($request->hasFile('banner_image') && $request->file('banner_image')->isValid()) {
             $extension = $request->file('banner_image')->getClientOriginalExtension();

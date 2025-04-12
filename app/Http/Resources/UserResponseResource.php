@@ -23,6 +23,7 @@ class UserResponseResource extends JsonResource
                 'title' => $this->quiz->title,
                 'start_time' => $this->quiz->start_time,
                 'end_time' => $this->quiz->end_time,
+                'quiz_over_at' => $this->quiz->quiz_over_at
             ]),
         ];
     }

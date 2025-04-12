@@ -9,7 +9,7 @@ class Quiz extends Model
     protected $fillable = [
         'category_id', 'title', 'description', 'banner_image',
         'quizContents', 'spot_limit', 'entry_fees', 'prize_money', 'node_id',
-        'start_time', 'end_time', 'quiz_timer', 'totalQuestion'
+        'start_time', 'end_time', 'quiz_timer', 'totalQuestion', 'quiz_over_at'
     ];
 
     protected $casts = [

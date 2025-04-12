@@ -68,6 +68,8 @@ class PlayQuizController extends Controller
             $nextQuesId = $questionId+1;
             $quiz = Quiz::where('node_id', $nodeId)->first();
             $question = $quiz->quizContents->where('id', $nextQuesId)->select('id', 'question', 'options')->first();
+            $participated = UserResponse::where('node_id', $nodeId)->count();
+            $question['participated'] = $participated;
             return $this->successResponse($question, "Question Retrieved Successfully", 200);
         }
         if($validatedQuestion['flag']){
@@ -117,9 +119,9 @@ class PlayQuizController extends Controller
                 $userResponse->update([
                     'responseContents' => $existingResponses
                 ]);
+                $maxQuestionCount = $quiz->quizContents->count();
                 if($isCorrect){
                     $userResponse->increment('score', 1);
-                    $maxQuestionCount = $quiz->quizContents->count();
                     if($questionId == $maxQuestionCount){
                         $userResponse->update(['status' => 'completed']);
                         return ['flag' => true, 'message' => "Last question & Correct Answer, quiz submitted", 'is_nextQuestion' => false];
@@ -130,6 +132,10 @@ class PlayQuizController extends Controller
                 } else {
                     // In free game, we're not submitting quiz, user will continue to play.
                     if($quiz->entry_fees == 0){
+                        if($questionId == $maxQuestionCount){
+                            $userResponse->update(['status' => 'completed']);
+                            return ['flag' => true, 'message' => "Last question & Incorrect Answer, quiz submitted", 'is_nextQuestion' => false];
+                        }
                         return ['flag' => false, 'message' => "Incorrect answer", 'is_nextQuestion' => true];
                     }
                     // ===================================================================

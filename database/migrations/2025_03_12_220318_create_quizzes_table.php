@@ -27,6 +27,7 @@ return new class extends Migration
             $table->unsignedBigInteger('end_time');
             $table->integer('quiz_timer')->default(30);
             $table->integer('totalQuestion')->default(0);
+            $table->unsignedBigInteger('quiz_over_at')->default(0);
             $table->timestamps();
         });
     }
