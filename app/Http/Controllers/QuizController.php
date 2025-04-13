@@ -9,6 +9,7 @@ use App\Models\Quiz;
 use App\Models\QuizVariant;
 use App\Models\User;
 use App\Models\UserResponse;
+use App\Models\Leaderboard;
 use App\Models\FundTransaction;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
@@ -180,6 +181,7 @@ class QuizController extends Controller
 
     public function leaderboard(Request $request)
     {
+        //Suggestion: if you want to make a job to optimize the query follow here https://chatgpt.com/c/67fbed85-fe18-8002-895c-f56fa15cb4a3
         $validator = Validator::make($request->all(), [
             'node_id' => 'required|exists:user_responses,node_id'
         ]);
@@ -197,7 +199,8 @@ class QuizController extends Controller
             return $this->errorResponse([], "Quiz is not ended yet, leaderboard cannot be processed!", 403);
         }
 
-        $leaderboard = DB::table('user_responses as ur')
+        if (!$quiz->is_prize_distributed) {
+            $leaderboard = DB::table('user_responses as ur')
             ->join('users as u', function ($join) {
                 $join->on('u.id', '=', 'ur.user_id');
             })
@@ -215,9 +218,8 @@ class QuizController extends Controller
             ->limit($winnersLimit)
             ->orderBy('ur.score', 'DESC')
             ->orderBy('duration')
+            ->orderBy('ur.user_id')
             ->get();
-
-        if (!$quiz->is_prize_distributed) {
 
             // Preload all needed data
             $variantIds = $leaderboard->pluck('quiz_variant_id')->unique()->toArray();
@@ -239,15 +241,37 @@ class QuizController extends Controller
                         'user_id' => $rank->user_id,
                         'action' => 'deposit',
                         'amount' => $rewardAmount,
-                        'description' => 'Quiz Reward Credited!',
+                        'description' => "Quiz Reward Credited for {$quiz->title}!",
                         'reference_id' => $rank->response_id,
                         'reference_type' => UserResponse::class,
                         'approved_status' => 'approved'
+                    ]);
+
+                    Leaderboard::create([
+                        'quiz_id' => $quiz->id,
+                        'name' => $rank->name,
+                        'user_id' => $rank->user_id,
+                        'quiz_variant_id' => $rank->quiz_variant_id,
+                        'user_response_id' => $rank->response_id,
+                        'score' => $rank->score,
+                        'reward' => $rewardAmount,
+                        'rank' => $key + 1,
+                        'duration' => $rank->duration
                     ]);
                 }
 
                 $quiz->update(['is_prize_distributed' => 1]);
             });
+        } else {
+            $leaderboard = Leaderboard::select('name', 'user_id', 'rank', 'score', 'duration')->where('quiz_id', $quiz->id)
+                                        ->orderBy('rank')
+                                        ->get();
+            $leaderboard = $leaderboard->map(function ($entry) use ($user) {
+                $entry->isUser = $entry->user_id == $user->id;
+                return $entry;
+            });
+                                        
+            
         }
 
         $query = UserResponse::where('node_id', $data['node_id']);
@@ -266,6 +290,42 @@ class QuizController extends Controller
 
         return $this->errorResponse([], "Leaderboard has not been prepared yet!", 403);
     }
+
+    public function showAdminLeaderboard(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'quiz_id' => 'required|exists:quizzes,id',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->errorResponse([], $validator->errors()->first(), 422);
+        }
+
+        $leaderboard = Leaderboard::select('name', 'rank', 'score', 'duration', 'reward')->where('quiz_id', $request->quiz_id)->orderBy('rank')->get();
+
+        if ($leaderboard->isNotEmpty()) {
+            return $this->successResponse($leaderboard, "Leaderboard has been fetched!", 200);
+        }
+
+        return $this->errorResponse([], "Leaderboard has not been prepared yet!", 404);
+    }
+
+
+    public function listAdminLeaderboard()
+    {
+        $leaderboards = Leaderboard::select('leaderboards.quiz_id', 'quizzes.title', DB::raw('MIN(leaderboards.rank) as top_rank'))
+        ->join('quizzes', 'quizzes.id', '=', 'leaderboards.quiz_id')
+        ->groupBy('leaderboards.quiz_id', 'quizzes.title')
+        ->get();
+                                
+
+        if ($leaderboards->isNotEmpty()) {
+            return $this->successResponse($leaderboards, "Leaderboard list has been fetched!", 200);
+        }
+
+        return $this->errorResponse([], "No leaderboards available!", 404);
+    }
+
 
 
     public function listVariant(Request $request){
