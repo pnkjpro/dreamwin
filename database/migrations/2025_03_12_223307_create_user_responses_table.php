@@ -18,6 +18,8 @@ return new class extends Migration
             $table->integer('node_id');
             $table->foreignId('quiz_variant_id')->constrained('quiz_variants')->onDelete('cascade')->nullable();
             $table->integer('score')->default(0);
+            $table->unsignedBigInteger('started_at')->default(0);
+            $table->unsignedBigInteger('ended_at')->default(0);
             $table->json('responseContents')->nullable();
             $table->enum('status', ['pending', 'joined', 'initiated', 'completed'])->default('pending');
             $table->timestamps();

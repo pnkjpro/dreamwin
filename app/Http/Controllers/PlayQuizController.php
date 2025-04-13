@@ -17,6 +17,7 @@ use App\Http\Controllers\QuizController;
 
 use Illuminate\Support\Facades\Validator;
 use App\Traits\JsonResponseTrait;
+use Carbon\Carbon;
 
 class PlayQuizController extends Controller
 {
@@ -40,7 +41,12 @@ class PlayQuizController extends Controller
         if(isset($isUserResponseExists)){
             return $this->errorResponse([], "Game Already Started!", 422);
         }
-        $userResponseModal = UserResponse::where('quiz_id', $quizId)->update(['status' => 'initiated']);
+        $userResponseModal = UserResponse::where('user_id', $user->id)
+            ->where('quiz_id', $quizId)->update([
+                    'status' => 'initiated',
+                    'started_at' => time(),
+                    'ended_at' => time()
+                ]);
 
         $question = $this->nextQuestion(new Request([
             'node_id' => $requestData['node_id'],
@@ -117,7 +123,8 @@ class PlayQuizController extends Controller
                 ];
                 $existingResponses[] = $newResponse;
                 $userResponse->update([
-                    'responseContents' => $existingResponses
+                    'responseContents' => $existingResponses,
+                    'ended_at' => time()
                 ]);
                 $maxQuestionCount = $quiz->quizContents->count();
                 if($isCorrect){

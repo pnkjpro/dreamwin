@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class UserResponse extends Model
 {
     protected $fillable = [
-        'user_id', 'quiz_id', 'node_id', 'quiz_variant_id', 'score', 'responseContents', 'status'
+        'user_id', 'quiz_id', 'node_id', 'quiz_variant_id', 'score', 'started_at', 'ended_at', 'responseContents', 'status'
     ];
 
     protected $casts = [

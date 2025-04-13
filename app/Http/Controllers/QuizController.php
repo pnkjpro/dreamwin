@@ -196,11 +196,13 @@ class QuizController extends Controller
                 ->selectRaw(
                     'u.name, 
                     ur.score,
+                    (ur.ended_at - ur.started_at) as duration,
                     CASE WHEN u.id = ? THEN true ELSE false END as isUser', 
                     [$user->id]
                     )
                 ->limit(10)
                 ->orderBy('ur.score', 'DESC')
+                ->orderBy('duration')
                 ->get();
 
         $query = UserResponse::where('node_id', $data['node_id']);
