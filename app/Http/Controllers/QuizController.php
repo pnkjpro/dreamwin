@@ -7,7 +7,9 @@ use Illuminate\Validation\Rule;
 
 use App\Models\Quiz;
 use App\Models\QuizVariant;
+use App\Models\User;
 use App\Models\UserResponse;
+use App\Models\FundTransaction;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
@@ -62,6 +64,7 @@ class QuizController extends Controller
             'start_time' => 'required',
             'end_time' => 'required',
             'quiz_timer' => 'required|integer',
+            'winners' => 'required|integer',
             'banner_image' => 'nullable|file|image|max:2048'
         ]);
 
@@ -175,49 +178,95 @@ class QuizController extends Controller
         
     }
 
-    public function leaderboard(Request $request){
+    public function leaderboard(Request $request)
+    {
         $validator = Validator::make($request->all(), [
             'node_id' => 'required|exists:user_responses,node_id'
         ]);
 
-        if($validator->fails()){
-            return $this->errorResponse([], $e->getMessage(), 422);
+        if ($validator->fails()) {
+            return $this->errorResponse([], $validator->errors()->first(), 422);
         }
 
         $data = $validator->validated();
         $user = Auth::user();
+        $quiz = Quiz::where('node_id', $data['node_id'])->first();
+        $winnersLimit = $quiz->winners;
 
-        //you can make all user_responses's status to complete if now_time > quiz.quiz_end_time.
+        if ($quiz->quiz_over_at > time()) {
+            return $this->errorResponse([], "Quiz is not ended yet, leaderboard cannot be processed!", 403);
+        }
 
         $leaderboard = DB::table('user_responses as ur')
-            ->join('users as u', function($join){
-               $join->on('u.id', '=', 'ur.user_id');
-            })->where('ur.node_id', $data['node_id'])
-                ->selectRaw(
-                    'u.name, 
-                    ur.score,
-                    (ur.ended_at - ur.started_at) as duration,
-                    CASE WHEN u.id = ? THEN true ELSE false END as isUser', 
-                    [$user->id]
-                    )
-                ->limit(10)
-                ->orderBy('ur.score', 'DESC')
-                ->orderBy('duration')
-                ->get();
+            ->join('users as u', function ($join) {
+                $join->on('u.id', '=', 'ur.user_id');
+            })
+            ->where('ur.node_id', $data['node_id'])
+            ->selectRaw(
+                'u.name, 
+                ur.user_id,
+                ur.score,
+                ur.id as response_id,
+                ur.quiz_variant_id,
+                (ur.ended_at - ur.started_at) as duration,
+                CASE WHEN u.id = ? THEN true ELSE false END as isUser',
+                [$user->id]
+            )
+            ->limit($winnersLimit)
+            ->orderBy('ur.score', 'DESC')
+            ->orderBy('duration')
+            ->get();
+
+        if (!$quiz->is_prize_distributed) {
+
+            // Preload all needed data
+            $variantIds = $leaderboard->pluck('quiz_variant_id')->unique()->toArray();
+            $userIds = $leaderboard->pluck('user_id')->unique()->toArray();
+
+            $variants = QuizVariant::whereIn('id', $variantIds)->get()->keyBy('id');
+            $users = User::whereIn('id', $userIds)->get()->keyBy('id');
+
+            DB::transaction(function () use ($leaderboard, $variants, $users, $quiz) {
+                foreach ($leaderboard as $key => $rank) {
+                    $variant = $variants[$rank->quiz_variant_id];
+                    $winnerUser = $users[$rank->user_id];
+                    $prizeContents = $variant->prize_contents;
+                    $rewardAmount = $prizeContents[$key + 1] ?? 0;
+
+                    $winnerUser->increment('funds', $rewardAmount);
+
+                    FundTransaction::create([
+                        'user_id' => $rank->user_id,
+                        'action' => 'deposit',
+                        'amount' => $rewardAmount,
+                        'description' => 'Quiz Reward Credited!',
+                        'reference_id' => $rank->response_id,
+                        'reference_type' => UserResponse::class,
+                        'approved_status' => 'approved'
+                    ]);
+                }
+
+                $quiz->update(['is_prize_distributed' => 1]);
+            });
+        }
 
         $query = UserResponse::where('node_id', $data['node_id']);
         $count = $query->count();
         $userPoints = $query->where('user_id', $user->id)->select('score')->first();
+
         $result = [
             'topPlayers' => $leaderboard,
             'totalParticipants' => $count,
             'userPoints' => $userPoints
         ];
-        if($leaderboard->first()){
-            return $this->successResponse($result, "leaderboard has been prepared", 200);
+
+        if ($leaderboard->first()) {
+            return $this->successResponse($result, "Leaderboard has been prepared", 200);
         }
-        return $this->errorResponse([], "leaderboard has not prepared yet!", 403);
+
+        return $this->errorResponse([], "Leaderboard has not been prepared yet!", 403);
     }
+
 
     public function listVariant(Request $request){
         $nodeId = $request->query('node_id');

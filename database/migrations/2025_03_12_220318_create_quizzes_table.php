@@ -26,8 +26,10 @@ return new class extends Migration
             $table->unsignedBigInteger('start_time');
             $table->unsignedBigInteger('end_time');
             $table->integer('quiz_timer')->default(30);
+            $table->integer('winners')->default(1);
             $table->integer('totalQuestion')->default(0);
             $table->unsignedBigInteger('quiz_over_at')->default(0);
+            $table->boolean('is_prize_distributed')->default(0);
             $table->timestamps();
         });
     }

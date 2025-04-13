@@ -16,6 +16,9 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->enum('action', ['deposit', 'withdraw']);
             $table->integer('amount')->default(0);
+            $table->text('description')->nullable();
+            $table->integer('reference_id')->nullable(); //eg. $lifeline->id
+            $table->string('reference_type')->nullable(); //eg. Lifeline::class
             $table->enum('approved_status', ['pending', 'approved', 'rejected'])->default('pending');
             $table->timestamps();
         });

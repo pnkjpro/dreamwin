@@ -10,6 +10,9 @@ class FundTransaction extends Model
         'user_id',
         'action',
         'amount',
+        'description',
+        'reference_id',
+        'reference_type',
         'approved_status'
     ];
 }
