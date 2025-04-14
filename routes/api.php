@@ -39,6 +39,7 @@ Route::middleware(['auth:sanctum','isAdmin'])->prefix('admin')->group(function()
     Route::post('/transaction/approval', [TransactionController::class, 'fundApproval']);
     Route::get('/transaction/list/all', [TransactionController::class, 'listAllTransactions']);
     Route::post('/banner/update', [HomeController::class, 'updateBanner']);
+    Route::post('/lifeline/update', [LifelineController::class, 'updateLifeline']);
     Route::post('/category/create', [CategoryController::class, 'store']);
     Route::post('/howVideos/update', [HomeController::class, 'updateHowVideos']);
     Route::get('/list/leaderboards', [QuizController::class, 'listAdminLeaderboard']);
@@ -52,6 +53,7 @@ Route::prefix('category')->group(function(){
 
 Route::middleware('auth:sanctum')->prefix('lifeline')->group(function(){
     Route::get('/', [LifelineController::class, 'lifelines']);
+    Route::get('/list', [LifelineController::class, 'fetchLifeline']);
     Route::post('/purchase', [LifelineController::class, 'purchaseLifeline']);
     Route::post('/use', [LifelineUsageController::class, 'useLifeline']);
 });

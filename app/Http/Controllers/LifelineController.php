@@ -23,6 +23,12 @@ class LifelineController extends Controller
         $lifelines = User::with('lifelines')->where('id', Auth::user()->id)->get();
         return $this->successResponse($lifelines, "Available Lifelines", 200);
     }
+
+    public function fetchLifeline()
+    {
+        $lifelines = Lifeline::all();
+        return $this->successResponse($lifelines, "Lifeline Details", 200);
+    }
     
     public function userLifelines()
     {
@@ -44,6 +50,27 @@ class LifelineController extends Controller
             'status' => 'success',
             'data' => $userLifelines
         ]);
+    }
+
+    public function updateLifeline(Request $request){
+        $validator = Validator::make($request->all(), [
+            'lifeline_id' => 'required|exists:lifelines,id',
+            'cost' => 'required|integer'
+        ]);
+
+        if ($validator->fails()) {
+            return $this->errorResponse([], $validator->errors(), 422);
+        }
+
+        $data = $validator->validated();
+
+        $lifeline = Lifeline::findOrFail($data['lifeline_id']);
+
+        $lifeline->update([
+            'cost' => $data['cost']
+        ]);
+
+        return $this->successResponse([], 'Lifeline updated successfully!', 200);
     }
     
     public function purchaseLifeline(Request $request)
