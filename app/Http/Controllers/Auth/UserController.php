@@ -30,7 +30,7 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email',
             'mobile' => 'nullable|numeric|unique:users,mobile',
             'password' => 'required|min:6|confirmed',
-            'refer_code' => 'sometimes|max:8|exists:users,refer_code'
+            'refer_code' => 'nullable|max:8|exists:users,refer_code'
         ]);
 
         // If validation fails, return the error response
