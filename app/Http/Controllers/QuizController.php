@@ -330,7 +330,11 @@ class QuizController extends Controller
 
     public function listVariant(Request $request){
         $nodeId = $request->query('node_id');
-        $QuizVariants = Quiz::with('quiz_variants')->where('node_id', $nodeId)->first();
+        $QuizVariants = Quiz::with([
+            'quiz_variants' => function($query){
+                $query->withCount('user_responses');
+            }
+            ])->where('node_id', $nodeId)->first();
         return $this->successResponse($QuizVariants->makeHidden('quizContents'), "Record has been founded!", 200);
     }
 

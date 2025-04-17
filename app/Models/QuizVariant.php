@@ -17,4 +17,9 @@ class QuizVariant extends Model
     public function quiz(){
         return $this->belongsTo(Quiz::class);
     }
+
+    public function user_responses()
+    {
+        return $this->hasMany(UserResponse::class);
+    }
 }

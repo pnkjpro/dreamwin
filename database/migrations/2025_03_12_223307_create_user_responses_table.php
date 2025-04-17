@@ -23,6 +23,8 @@ return new class extends Migration
             $table->json('responseContents')->nullable();
             $table->enum('status', ['pending', 'joined', 'initiated', 'completed'])->default('pending');
             $table->timestamps();
+
+            $table->index('quiz_variant_id');
         });
     }
 
