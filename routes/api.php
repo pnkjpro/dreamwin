@@ -41,6 +41,7 @@ Route::middleware(['auth:sanctum','isAdmin'])->prefix('admin')->group(function()
     Route::post('/banner/update', [HomeController::class, 'updateBanner']);
     Route::post('/lifeline/update', [LifelineController::class, 'updateLifeline']);
     Route::post('/category/create', [CategoryController::class, 'store']);
+    Route::post('/categories/update-order', [CategoryController::class, 'updateSorting']);
     Route::post('/howVideos/update', [HomeController::class, 'updateHowVideos']);
     Route::get('/list/leaderboards', [QuizController::class, 'listAdminLeaderboard']);
     Route::post('/show/leaderboard', [QuizController::class, 'showAdminLeaderboard']);

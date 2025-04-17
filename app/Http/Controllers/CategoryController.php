@@ -15,7 +15,7 @@ class CategoryController extends Controller
     use JsonResponseTrait;
     public function index()
     {
-        $categories = Category::orderBy('display_order', 'asc')->get();
+        $categories = Category::orderBy('display_order')->get();
         return $this->successResponse($categories, "Record has been founded", 200);
     }
 
@@ -23,6 +23,28 @@ class CategoryController extends Controller
         $quizzes = Category::with('quizzes');
 
         return $this->successResponse($quizzes, "Record has been founded", 200);
+    }
+    
+    public function updateSorting(Request $request)
+    {
+        $data = $request->all();
+
+        if (!is_array($data)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid data format.'
+            ], 422);
+        }
+
+        foreach ($data['categories'] as $item) {
+            if (isset($item['id'], $item['display_order'])) {
+                Category::where('id', $item['id'])->update([
+                    'display_order' => $item['display_order']
+                ]);
+            }
+        }
+
+        return $this->successResponse([], "Category Sorting has been updated successfully", 200);
     }
 
     public function store(Request $request)
