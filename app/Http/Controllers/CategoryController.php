@@ -30,9 +30,9 @@ class CategoryController extends Controller
         $validator = Validator::make($request->all(),[
             'name' => 'required|string|max:255',
             'description' => 'required|string',
-            'icon_color' => 'nullable|string',
             'icon' => 'nullable|file|image|max:2048',
-            'banner_image' => 'nullable|file|image|max:2048'
+            // 'icon_color' => 'nullable|string',
+            // 'banner_image' => 'nullable|file|image|max:2048'
         ]);
 
         if ($validator->fails()) {
@@ -57,20 +57,20 @@ class CategoryController extends Controller
             $iconPath = $request->file('icon')->storeAs('categories/icons', $filename, 'public');
         }
 
-        $bannerPath = null;
-        if ($request->hasFile('banner_image') && $request->file('banner_image')->isValid()) {
-            $extension = $request->file('banner_image')->getClientOriginalExtension();
-            $filename = $slug . '-banner.' . $extension;
-            $bannerPath = $request->file('banner_image')->storeAs('categories/banners', $filename, 'public');
-        }
+        // $bannerPath = null;
+        // if ($request->hasFile('banner_image') && $request->file('banner_image')->isValid()) {
+        //     $extension = $request->file('banner_image')->getClientOriginalExtension();
+        //     $filename = $slug . '-banner.' . $extension;
+        //     $bannerPath = $request->file('banner_image')->storeAs('categories/banners', $filename, 'public');
+        // }
 
         $category = Category::create([
             'name' => $request->name,
             'slug' => $slug,
             'description' => $request->description,
             'icon' => $iconPath, // Store the file path
-            'icon_color' => $request->icon_color,
-            'banner_image' => $bannerPath, // Store the file path
+            // 'icon_color' => $request->icon_color,
+            // 'banner_image' => $bannerPath, // Store the file path
             'is_active' => $request->is_active ?? true, // Default to true if not provided
             'display_order' => 1,
         ]);
