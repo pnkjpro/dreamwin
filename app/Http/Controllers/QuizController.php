@@ -263,7 +263,7 @@ class QuizController extends Controller
                 $quiz->update(['is_prize_distributed' => 1]);
             });
         } else {
-            $leaderboard = Leaderboard::select('name', 'user_id', 'rank', 'score', 'duration')->where('quiz_id', $quiz->id)
+            $leaderboard = Leaderboard::select('name', 'user_id', 'rank', 'score', 'reward', 'duration')->where('quiz_id', $quiz->id)
                                         ->orderBy('rank')
                                         ->get();
             $leaderboard = $leaderboard->map(function ($entry) use ($user) {
