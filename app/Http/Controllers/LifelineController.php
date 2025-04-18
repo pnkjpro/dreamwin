@@ -72,6 +72,32 @@ class LifelineController extends Controller
 
         return $this->successResponse([], 'Lifeline updated successfully!', 200);
     }
+
+    public function lifelineTransactions(Request $request)
+    {
+        $user = Auth::user();
+        $transactions = Transaction::where('user_id', $user->id)
+                                ->where('type', 'lifeline_purchase')
+                                ->orderBy('id', 'DESC')
+                                ->get();
+        return $this->successResponse($transactions, 'Lifeline Transactions has been fetched', 200);
+    }
+
+    public function lifelineUsageHistory(Request $request)
+    {
+        $user = Auth::user();
+
+        $usageHistory = DB::table('lifeline_usages')
+            ->leftJoin('user_responses', 'user_responses.id', '=', 'lifeline_usages.user_response_id')
+            ->leftJoin('quizzes', 'quizzes.id', '=', 'user_responses.quiz_id')
+            ->leftJoin('lifelines', 'lifelines.id', '=', 'lifeline_usages.lifeline_id')
+            ->select('lifelines.name as lifeline_name', 'quizzes.title as applied_quiz_name', 'lifeline_usages.used_at')
+            ->orderByDesc('lifeline_usages.used_at')
+            ->get();
+
+        return $this->successResponse($usageHistory, 'Lifeline Usage HIstory has been fetched', 200);
+
+    }
     
     public function purchaseLifeline(Request $request)
     {

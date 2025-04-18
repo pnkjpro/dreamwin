@@ -54,6 +54,8 @@ Route::prefix('category')->group(function(){
 
 Route::middleware('auth:sanctum')->prefix('lifeline')->group(function(){
     Route::get('/', [LifelineController::class, 'lifelines']);
+    Route::get('/transaction/list', [LifelineController::class, 'lifelineTransactions']);
+    Route::get('/history/list', [LifelineController::class, 'lifelineUsageHistory']);
     Route::get('/list', [LifelineController::class, 'fetchLifeline']);
     Route::post('/purchase', [LifelineController::class, 'purchaseLifeline']);
     Route::post('/use', [LifelineUsageController::class, 'useLifeline']);
