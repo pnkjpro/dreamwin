@@ -28,7 +28,7 @@ class Quiz extends Model
         return $this->hasOne(QuizSheet::class);
     }
 
-    public function user_response(){
-        return $this->hasOne(UserResponse::class);
+    public function user_responses(){
+        return $this->hasMany(UserResponse::class);
     }
 }

@@ -26,7 +26,7 @@ class QuizController extends Controller
     public function index(Request $request)
     {
         $page = $request->input('page', 1);
-        $limit = Config::get('himpri.constant.paginationLimit'); 
+        $limit = Config::get('himpri.constant.homepagePaginationLimit'); 
         $offset = ($page - 1) * $limit; 
         $quizzes = Quiz::with(['category', 'quiz_variants'])
                         ->where('end_time', '>', time())
@@ -155,17 +155,6 @@ class QuizController extends Controller
 
         return $this->successResponse($userResponseModal, "Quiz has been submitted successfully!", 201);
         
-    }
-
-    public function quizByNodeId(Request $request){
-        $nodeId = $request->node_id;
-        $question_id = $request->question_id;
-        $quiz = Quiz::where('node_id', $nodeId)->first();
-        $quizResponse = $quiz->quizContents->select('id','question', 'options');
-        $question = $quizResponse->where('id', $question_id);
-
-        // return $this->successResponse($quizResponse, "Record has been founded!", 200);
-        return $this->successResponse($question, "Record has been founded!", 200);
     }
 
     public function nextQuestion(Request $request){
@@ -382,5 +371,30 @@ class QuizController extends Controller
             "Responses has been fetched", 
             200
         );
+    }
+
+    public function quizList(Request $request)
+    {
+        $page = $request->input('page', 1);
+        $categoryId = $request->input('category', '');
+        $limit = Config::get('himpri.constant.quizPaginationLimit'); 
+        $offset = ($page - 1) * $limit; 
+        $quizQuery = Quiz::with('category')->orderByDesc('id');
+        $totalCount = $quizQuery->count();
+        // Apply category filter if provided
+        if (!empty($categoryId)) {
+            $quizQuery->where('category_id', $categoryId);
+        }
+        $quizzes = $quizQuery->limit($limit)->offset($offset)->get()->makeHidden('quizContents');
+        return $this->successResponse([
+            "quizzes" => $quizzes, 
+            "totalCount" => $totalCount], 
+            "Quizzes has been fetched", 200);
+    }
+
+    public function quizByNodeId(Request $request){
+        $nodeId = $request->node_id;
+        $quiz = Quiz::with('user_responses.user')->where('node_id', $nodeId)->first();
+        return $this->successResponse($quiz, "Record has been founded!", 200);
     }
 }

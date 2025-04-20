@@ -27,7 +27,6 @@ Route::get('/user', function (Request $request) {
 Route::prefix('quiz')->group(function(){
     Route::get('/', [QuizController::class, 'index']);
     Route::middleware('auth:sanctum')->post('/submit', [QuizController::class, 'userResponse']);
-    Route::get('/show', [QuizController::class, 'quizByNodeId']);
     Route::get('/contest', [QuizController::class, 'listVariant']);
     Route::middleware('auth:sanctum')->get('/responses/list', [QuizController::class, 'responseList']);
     Route::middleware('auth:sanctum')->post('/leaderboard', [QuizController::class, 'leaderboard']);
@@ -45,6 +44,9 @@ Route::middleware(['auth:sanctum','isAdmin'])->prefix('admin')->group(function()
     Route::post('/howVideos/update', [HomeController::class, 'updateHowVideos']);
     Route::get('/list/leaderboards', [QuizController::class, 'listAdminLeaderboard']);
     Route::post('/show/leaderboard', [QuizController::class, 'showAdminLeaderboard']);
+    Route::get('/user/list', [UserController::class, 'userList']);
+    Route::get('/quiz/list', [QuizController::class, 'quizList']);
+    Route::get('/show/quiz/users', [QuizController::class, 'quizByNodeId']);
 });
 
 Route::prefix('category')->group(function(){

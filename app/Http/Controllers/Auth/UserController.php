@@ -116,6 +116,14 @@ class UserController extends Controller
 
     }
 
+    public function userList(Request $request){
+        $page = $request->input('page', 1);
+        $limit = Config::get('himpri.constant.quizPaginationLimit'); 
+        $offset = ($page - 1) * $limit; 
+        $users = User::orderByDesc('id')->limit($limit)->offset($offset)->get();
+        return $this->successResponse($users, "Users has been fetched", 200);
+    }
+
     public function fetchUser(Request $request){
         $user = Auth::user()->load([
             'lifelines', 
