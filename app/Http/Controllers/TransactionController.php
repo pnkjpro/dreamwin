@@ -112,8 +112,16 @@ class TransactionController extends Controller
 
     public function listTransactions(Request $request){
         $user = Auth::user();
-        $transactions = FundTransaction::where('user_id', $user->id)->orderBy('id', 'DESC')->get();
+        $page = $request->input('page', 1);
+        $limit = Config::get('himpri.constant.dashboardPaginationLimit'); 
+        $offset = ($page - 1) * $limit; 
+        $transactionsQuery = FundTransaction::where('user_id', $user->id)->orderBy('id', 'DESC');
+        $totalCount = $transactionsQuery->count();
+        $transactions = $transactionsQuery->limit($limit)->offset($offset)->get();
 
-        return $this->successResponse($transactions, "Transactions has been fetched", 200);
+        return $this->successResponse([
+            'totalCount' => $totalCount,
+            'transactions' => $transactions
+        ], "Transactions has been fetched", 200);
     }
 }

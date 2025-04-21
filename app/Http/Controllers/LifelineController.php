@@ -11,6 +11,7 @@ use App\Models\Transaction;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Config;
 
 use App\Traits\JsonResponseTrait;
 
@@ -76,26 +77,39 @@ class LifelineController extends Controller
     public function lifelineTransactions(Request $request)
     {
         $user = Auth::user();
-        $transactions = Transaction::where('user_id', $user->id)
+        $page = $request->input('page', 1);
+        $limit = Config::get('himpri.constant.dashboardPaginationLimit'); 
+        $offset = ($page - 1) * $limit; 
+        $transactionsQuery = Transaction::where('user_id', $user->id)
                                 ->where('type', 'lifeline_purchase')
-                                ->orderBy('id', 'DESC')
-                                ->get();
-        return $this->successResponse($transactions, 'Lifeline Transactions has been fetched', 200);
+                                ->orderBy('id', 'DESC');
+        $totalCount = $transactionsQuery->count();
+        $transactions = $transactionsQuery->limit($limit)->offset($offset)->get();
+        return $this->successResponse([
+            'totalCount' => $totalCount,
+            'lifeline_transactions' => $transactions
+        ], 'Lifeline Transactions has been fetched', 200);
     }
 
     public function lifelineUsageHistory(Request $request)
     {
         $user = Auth::user();
-
-        $usageHistory = DB::table('lifeline_usages')
+        $page = $request->input('page', 1);
+        $limit = Config::get('himpri.constant.dashboardPaginationLimit'); 
+        $offset = ($page - 1) * $limit; 
+        $usageHistoryQuery = DB::table('lifeline_usages')
             ->leftJoin('user_responses', 'user_responses.id', '=', 'lifeline_usages.user_response_id')
             ->leftJoin('quizzes', 'quizzes.id', '=', 'user_responses.quiz_id')
             ->leftJoin('lifelines', 'lifelines.id', '=', 'lifeline_usages.lifeline_id')
             ->select('lifelines.name as lifeline_name', 'quizzes.title as applied_quiz_name', 'lifeline_usages.used_at')
-            ->orderByDesc('lifeline_usages.used_at')
-            ->get();
+            ->orderByDesc('lifeline_usages.used_at');
+        $totalCount = $usageHistoryQuery->count();
+        $usageHistory = $usageHistoryQuery->limit($limit)->offset($offset)->get();
 
-        return $this->successResponse($usageHistory, 'Lifeline Usage HIstory has been fetched', 200);
+        return $this->successResponse([
+            'totalCount' => $totalCount,
+            'lifeline_histories' => $usageHistory
+        ], 'Lifeline Usage HIstory has been fetched', 200);
 
     }
     

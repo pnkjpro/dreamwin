@@ -376,12 +376,19 @@ class QuizController extends Controller
     public function responseList(Request $request)
     {
         $user = Auth::user();
-        $responses = UserResponse::with('quiz')
+        $page = $request->input('page', 1);
+        $limit = Config::get('himpri.constant.dashboardPaginationLimit'); 
+        $offset = ($page - 1) * $limit; 
+        $responsesQuery = UserResponse::with('quiz')
             ->where('user_id', $user->id)
-            ->get();
+            ->orderByDesc('id');
+        $totalCount = $responsesQuery->count();
+        $responses = $responsesQuery->limit($limit)->offset($offset)->get();
             
-        return $this->successResponse(
-            UserResponseResource::collection($responses), 
+        return $this->successResponse([
+            'totalCount' => $totalCount,
+            'responses' => UserResponseResource::collection($responses)
+        ], 
             "Responses has been fetched", 
             200
         );
