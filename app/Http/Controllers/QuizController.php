@@ -377,7 +377,7 @@ class QuizController extends Controller
     {
         $page = $request->input('page', 1);
         $categoryId = $request->input('category', '');
-        $limit = Config::get('himpri.constant.quizPaginationLimit'); 
+        $limit = Config::get('himpri.constant.adminPaginationLimit'); 
         $offset = ($page - 1) * $limit; 
         $quizQuery = Quiz::with('category')->orderByDesc('id');
         $totalCount = $quizQuery->count();

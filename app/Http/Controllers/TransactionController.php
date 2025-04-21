@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
@@ -93,13 +94,20 @@ class TransactionController extends Controller
 
     public function listAllTransactions(Request $request){
         // $transactions = FundTransaction::orderBy('created_at', 'DESC')->get();
-        $transactions = DB::table('fund_transactions as ft')
+        $page = $request->input('page', 1);
+        $limit = Config::get('himpri.constant.adminPaginationLimit'); 
+        $offset = ($page - 1) * $limit; 
+        $transactionsQuery = DB::table('fund_transactions as ft')
                             ->leftjoin('users as u', function($join){
                                     $join->on('u.id', '=', 'ft.user_id');
                             })
                             ->select('ft.id','ft.user_id','u.name', 'u.upi_id', 'ft.action', 'ft.amount', 'ft.approved_status')
-                            ->orderBy('ft.id','DESC')->get();
-        return $this->successResponse($transactions, "Latest transactions has been fetched", 200);
+                            ->orderBy('ft.id','DESC');
+        $totalCount = $transactionsQuery->count();
+        $transactions = $transactionsQuery->limit($limit)->offset($offset)->get();
+        return $this->successResponse([
+            'totalCount' => $totalCount,
+            'transactions' => $transactions], "Latest transactions has been fetched", 200);
     }
 
     public function listTransactions(Request $request){
