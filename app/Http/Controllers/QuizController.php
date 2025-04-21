@@ -300,20 +300,34 @@ class QuizController extends Controller
     }
 
 
-    public function listAdminLeaderboard()
+    public function listAdminLeaderboard(Request $request)
     {
-        $leaderboards = Leaderboard::select('leaderboards.quiz_id', 'quizzes.title', DB::raw('MIN(leaderboards.rank) as top_rank'))
-        ->join('quizzes', 'quizzes.id', '=', 'leaderboards.quiz_id')
-        ->groupBy('leaderboards.quiz_id', 'quizzes.title')
-        ->get();
-                                
+        $page = $request->input('page', 1);
+        $limit = Config::get('himpri.constant.adminPaginationLimit'); 
+        $offset = ($page - 1) * $limit; 
+        $leaderboardsQuery = Leaderboard::select(
+                'leaderboards.quiz_id',
+                'quizzes.title',
+                'users.name as top_user_name'
+            )
+            ->join('quizzes', 'quizzes.id', '=', 'leaderboards.quiz_id')
+            ->join('users', 'users.id', '=', 'leaderboards.user_id')
+            ->orderByDesc('leaderboards.id');
+        $totalCount = $leaderboardsQuery->count();
+        $leaderboards = $leaderboardsQuery->limit($limit)->offset($offset)
+                                            ->where('leaderboards.rank', 1)
+                                            ->get();
 
         if ($leaderboards->isNotEmpty()) {
-            return $this->successResponse($leaderboards, "Leaderboard list has been fetched!", 200);
+            return $this->successResponse([
+                'totalCount' => $totalCount,
+                'leaderboards' => $leaderboards
+            ], "Leaderboard list has been fetched!", 200);
         }
 
         return $this->errorResponse([], "No leaderboards available!", 404);
     }
+
 
 
 
