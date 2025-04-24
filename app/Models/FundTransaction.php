@@ -10,6 +10,7 @@ class FundTransaction extends Model
         'user_id',
         'action',
         'amount',
+        'transaction_id',
         'description',
         'reference_id',
         'reference_type',

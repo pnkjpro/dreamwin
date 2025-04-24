@@ -20,7 +20,8 @@ class TransactionController extends Controller
     public function make_transaction(Request $request){
         $validator = Validator::make($request->all(),[
             'amount' => 'required|numeric',
-            'action' => 'required|in:deposit,withdraw'
+            'action' => 'required|in:deposit,withdraw',
+            'transaction_id' => 'required_if:action,deposit|string|max:22'
         ]);
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
@@ -31,7 +32,8 @@ class TransactionController extends Controller
             $transaction = FundTransaction::create([
                 'user_id' => $user->id,
                 'action' => $data['action'],
-                'amount' => $data['amount']
+                'amount' => $data['amount'],
+                'transaction_id' => $data['transaction_id']
             ]); 
     
             $message = "";
