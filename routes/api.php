@@ -8,6 +8,7 @@ use App\Http\Controllers\LifelineUsageController;
 use App\Http\Controllers\PlayQuizController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\OtpController;
 use App\Http\Controllers\Auth\UserController;
 use Illuminate\Support\Facades\Route;
 Route::get('/user', function (Request $request) {
@@ -69,6 +70,8 @@ Route::prefix('users')->group(function(){
     Route::post('/login', [UserController::class, 'login']);
     Route::middleware('auth:sanctum')->post('/logout', [UserController::class, 'logout']);
     Route::middleware('auth:sanctum')->post('/update/upi', [UserController::class, 'updatePaymentUpi']);
+    Route::post('/otp/send', [OtpController::class, 'sendOtp']);
+    Route::post('/otp/verify', [UserController::class, 'verifyEmail']);
 });
 
 Route::middleware('auth:sanctum')->prefix('funds')->group(function(){

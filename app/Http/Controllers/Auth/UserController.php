@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use App\Http\Controllers\OtpController;
 
 use App\Traits\JsonResponseTrait;
 
@@ -20,6 +21,12 @@ use App\Traits\JsonResponseTrait;
 class UserController extends Controller
 {
     use JsonResponseTrait;
+    public $OtpController;
+
+    public function __construct()
+    {
+        $this->OtpController = new OtpController();
+    }
     /**
      * Register a new user.
      */
@@ -48,24 +55,25 @@ class UserController extends Controller
         $avatars = Config::get('himpri.constant.avatars');
         $randomAvatar = '/avatars/' . Arr::random($avatars);
 
+        $isOtpSent = $this->OtpController->sendOtp(new Request([
+            'email' => $request->email
+        ]));
 
+        if($isOtpSent->original['success']){
+            $user = User::create([
+                'name' => $request->name,
+                'avatar' => $randomAvatar,
+                'email' => $request->email,
+                'mobile' => $request->mobile,
+                'password' => Hash::make($request->password),
+                'refer_code' => $this->generateReferralCode(),
+                'refer_by' => isset($referById) ? $referById : null,
+            ]);
+        } else {
+            return $this->errorResponse([], $isOtpSent->original['message'], 500);
+        }
 
-        $user = User::create([
-            'name' => $request->name,
-            'avatar' => $randomAvatar,
-            'email' => $request->email,
-            'mobile' => $request->mobile,
-            'password' => Hash::make($request->password),
-            'refer_code' => $this->generateReferralCode(),
-            'refer_by' => isset($referById) ? $referById : null,
-        ]);
-
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return $this->successResponse([
-            'user' => $user,
-            'token' => $token
-        ], "user created successfully!", 201);
+        return $this->successResponse($user, "user created successfully!", 201);
     }
 
     public function generateReferralCode()
@@ -86,7 +94,20 @@ class UserController extends Controller
             'login' => 'required', // Can be email or mobile
             'password' => 'required'
         ]);
+        
+        $userDetails = $this->userDetails($request);
+        
+        if (empty($userDetails->original['data']['user']) || !Hash::check($request->password, $userDetails->original['data']['user']->password)) {
+            return $this->errorResponse([], "Invalid Credential", 422);
+        }
+        return $this->successResponse([
+            'user' => $userDetails->original['data']['user'],
+            'token' => $userDetails->original['data']['token']
+        ], "User details is found", 200);
+    }
 
+    public function userDetails(Request $request)
+    {
         $user = User::with([
             'lifelines',
             'user_responses' => function($query) {
@@ -99,21 +120,13 @@ class UserController extends Controller
             return $this->errorResponse([], "User not found", 403);
         }
 
-        // Hide user_id from responses before returning
         $user->user_responses->makeHidden('user_id');
-
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return $this->errorResponse([], "Invalid Credential", 422);
-        }
-
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return $this->successResponse([
             'user' => $user,
             'token' => $token
-        ], "user logged in successfully!", 200);
-
-
+        ], "User details is found", 200);
     }
 
     public function userList(Request $request){
@@ -145,27 +158,6 @@ class UserController extends Controller
         ]);
     }
 
-    /**
-     * Verify Mobile Number (Simulating OTP Verification)
-     */
-    public function verifyMobile(Request $request)
-    {
-        $request->validate([
-            'mobile' => 'required|string|exists:users,mobile',
-        ]);
-
-        $user = User::where('mobile', $request->mobile)->first();
-        
-        if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
-        }
-
-        // Simulating OTP verification (In real-world, send OTP and verify)
-        $user->update(['mobile_verified_at' => now()]);
-
-        return response()->json(['message' => 'Mobile number verified successfully']);
-    }
-
     public function updatePaymentUpi(Request $request){
         $validator = Validator::make($request->all(), [
             'upi_id' => 'required|string|max:225'
@@ -180,6 +172,26 @@ class UserController extends Controller
         $user->update(['upi_id' => $request->upi_id]);
 
         return $this->successResponse([], "UPI ID has been updated successfully", 200);
+    }
+
+    public function verifyEmail(Request $request)
+    {
+        $isOtpVerified = $this->OtpController->verifyOtp($request);
+        if($isOtpVerified->original['success']){
+            $userModal = User::where('email', $request->email)->update([
+                'email_verified_at' => now()
+            ]);
+        }
+
+        if(!$isOtpVerified->original['success']){
+            return $this->errorResponse([], $isOtpVerified->original['message'], 400);
+        }
+        
+        $userDetails = $this->userDetails(new Request([
+                            'login' => $request->email
+                        ]));
+        
+        return $this->successResponse($userDetails->original['data'], "Email is verified successfully", 200);
     }
 
     /**

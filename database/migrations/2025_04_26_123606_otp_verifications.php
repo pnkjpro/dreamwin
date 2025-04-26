@@ -13,13 +13,13 @@ return new class extends Migration
     {
         Schema::create('otp_verifications', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->string('mobile')->nullable();
             $table->string('email')->nullable();
             $table->integer('otp')->comment('its a 6 digit otp');
             $table->unsignedBigInteger('valid_on')->nullable();
             $table->unsignedBigInteger('validated_at')->nullable();
             $table->boolean('is_verified')->default(0);
+            $table->boolean('is_registered')->default(0);
             $table->timestamps();
         });
     }
@@ -29,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('otp_verifications');
+        //
     }
 };
