@@ -71,7 +71,8 @@ Route::prefix('users')->group(function(){
     Route::middleware('auth:sanctum')->post('/logout', [UserController::class, 'logout']);
     Route::middleware('auth:sanctum')->post('/update/upi', [UserController::class, 'updatePaymentUpi']);
     Route::post('/otp/send', [OtpController::class, 'sendOtp']);
-    Route::post('/otp/verify', [UserController::class, 'verifyEmail']);
+    Route::post('/otp/verify', [OtpController::class, 'verifyOtp']);
+    Route::middleware('auth:sanctum')->post('/password/reset', [UserController::class, 'updatePassword']);
 });
 
 Route::middleware('auth:sanctum')->prefix('funds')->group(function(){

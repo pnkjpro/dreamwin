@@ -20,7 +20,15 @@ class OtpController extends Controller
     {
         $request->validate([
             'email' => 'required|email',
+            'label' => 'required|in:reset_password,verify_email'
         ]);
+
+        $isEmailExists = User::where('email', $request->email)->exists();
+        if($request->label === 'reset_password'){
+            if(!$isEmailExists){
+                return $this->errorResponse([], "User not found for this email", 400);
+            }
+        }
 
         $otp = rand(100000, 999999);
         $expiryTimestamp = now()->addMinutes(10)->timestamp; // <- this is a UNIX timestamp (seconds)
@@ -31,7 +39,6 @@ class OtpController extends Controller
             'valid_on' => $expiryTimestamp,
         ];
 
-        $isEmailExists = User::where('email', $request->email)->exists();
         if ($isEmailExists) {
             $data['is_registered'] = 1;
         }
@@ -55,6 +62,7 @@ class OtpController extends Controller
         $request->validate([
             'email' => 'required|email',
             'otp' => 'required|numeric|digits:6',
+            'label' => 'required|in:verify_email,reset_password'
         ]);
 
         $otpModal = OtpVerification::where([
@@ -64,20 +72,35 @@ class OtpController extends Controller
         ])->first();
 
         if (!$otpModal) {
-            return $this->errorResponse('Invalid OTP or Email.', 400);
+            return $this->errorResponse([], 'Invalid OTP or Email.', 400);
         }
 
         // Check if OTP expired
         if (time() > $otpModal->valid_on) { // using PHP time()
-            return $this->errorResponse('OTP has expired.', 400);
+            return $this->errorResponse([], 'OTP has expired.', 400);
+        }
+
+        if($request->label === 'verify_email'){
+            $userModal = User::where('email', $request->email)->update([
+                'email_verified_at' => now()
+            ]);
+        }
+
+        if($request->label === 'reset_password'){
+            //
         }
 
         $otpModal->update([
             'is_verified' => 1,
             'is_registered' => 1
             ]);
+
+        $userController = new UserController();
+        $userDetails = $userController->userDetails(new Request([
+            'login' => $request->email
+        ]));
         
-        return $this->successResponse([], 'OTP verified successfully!', 200);
+        return $this->successResponse($userDetails->original['data'], 'OTP verified successfully!', 200);
     }
 
     

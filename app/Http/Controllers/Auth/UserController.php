@@ -56,7 +56,8 @@ class UserController extends Controller
         $randomAvatar = '/avatars/' . Arr::random($avatars);
 
         $isOtpSent = $this->OtpController->sendOtp(new Request([
-            'email' => $request->email
+            'email' => $request->email,
+            'label' => 'verify_email'
         ]));
 
         if($isOtpSent->original['success']){
@@ -158,6 +159,23 @@ class UserController extends Controller
         ]);
     }
 
+    public function updatePassword(Request $request){
+        $validator = Validator::make($request->all(),[
+            'password' => 'required|min:6|confirmed',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->errorResponse([], $validator->errors()->first(), 422);
+        }
+
+        $user = Auth::user();
+        $user->update([
+            'password' => Hash::make($request->password)
+        ]);
+
+        return $this->successResponse([], "Password has been reset", 200);
+    }
+
     public function updatePaymentUpi(Request $request){
         $validator = Validator::make($request->all(), [
             'upi_id' => 'required|string|max:225'
@@ -172,26 +190,6 @@ class UserController extends Controller
         $user->update(['upi_id' => $request->upi_id]);
 
         return $this->successResponse([], "UPI ID has been updated successfully", 200);
-    }
-
-    public function verifyEmail(Request $request)
-    {
-        $isOtpVerified = $this->OtpController->verifyOtp($request);
-        if($isOtpVerified->original['success']){
-            $userModal = User::where('email', $request->email)->update([
-                'email_verified_at' => now()
-            ]);
-        }
-
-        if(!$isOtpVerified->original['success']){
-            return $this->errorResponse([], $isOtpVerified->original['message'], 400);
-        }
-        
-        $userDetails = $this->userDetails(new Request([
-                            'login' => $request->email
-                        ]));
-        
-        return $this->successResponse($userDetails->original['data'], "Email is verified successfully", 200);
     }
 
     /**
