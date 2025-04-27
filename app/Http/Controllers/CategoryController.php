@@ -75,7 +75,7 @@ class CategoryController extends Controller
         $iconPath = null;
         if ($request->hasFile('icon') && $request->file('icon')->isValid()) {
             $extension = $request->file('icon')->getClientOriginalExtension();
-            $filename = $slug . '.' . $extension;
+            $filename = $slug . time() . '.' . $extension;
             $iconPath = $request->file('icon')->storeAs('categories/icons', $filename, 'public');
         }
 

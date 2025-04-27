@@ -82,7 +82,7 @@ class QuizController extends Controller
         $bannerPath = null;
         if ($request->hasFile('banner_image') && $request->file('banner_image')->isValid()) {
             $extension = $request->file('banner_image')->getClientOriginalExtension();
-            $filename = $data['node_id'] . '-banner.' . $extension;
+            $filename = $data['node_id'] . time() . '-banner.' . $extension;
             $bannerPath = $request->file('banner_image')->storeAs('quiz/banners', $filename, 'public');
         }
         $data['banner_image'] = $bannerPath;
