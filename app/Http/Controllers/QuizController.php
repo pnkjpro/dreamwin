@@ -194,6 +194,7 @@ class QuizController extends Controller
                 $join->on('u.id', '=', 'ur.user_id');
             })
             ->where('ur.node_id', $data['node_id'])
+            ->where('ur.score', '>', 0)
             ->selectRaw(
                 'u.name, 
                 ur.user_id,
