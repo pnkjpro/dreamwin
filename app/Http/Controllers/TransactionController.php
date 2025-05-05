@@ -33,7 +33,7 @@ class TransactionController extends Controller
                 'user_id' => $user->id,
                 'action' => $data['action'],
                 'amount' => $data['amount'],
-                'transaction_id' => $data['transaction_id']
+                'transaction_id' => $data['transaction_id'] ?? ''
             ]); 
     
             $message = "";
