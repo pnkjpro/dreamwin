@@ -8,6 +8,7 @@ use App\Http\Controllers\LifelineUsageController;
 use App\Http\Controllers\PlayQuizController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\BotController;
 use App\Http\Controllers\OtpController;
 use App\Http\Controllers\Auth\UserController;
 use Illuminate\Support\Facades\Route;
@@ -48,6 +49,11 @@ Route::middleware(['auth:sanctum','isAdmin'])->prefix('admin')->group(function()
     Route::get('/user/list', [UserController::class, 'userList']);
     Route::get('/quiz/list', [QuizController::class, 'quizList']);
     Route::get('/show/quiz/users', [QuizController::class, 'quizByNodeId']);
+});
+
+Route::prefix('bot')->group(function(){
+    Route::post('/create', [BotController::class, 'createBot']);
+    Route::post('/action/create', [BotController::class, 'createActions']);
 });
 
 Route::prefix('category')->group(function(){
