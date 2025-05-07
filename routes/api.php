@@ -54,6 +54,8 @@ Route::middleware(['auth:sanctum','isAdmin'])->prefix('admin')->group(function()
 Route::prefix('bot')->group(function(){
     Route::post('/create', [BotController::class, 'createBot']);
     Route::post('/action/create', [BotController::class, 'createActions']);
+    Route::get('/list', [BotController::class, 'getBots']);
+    Route::get('/quizzes', [BotController::class, 'getQuizzes']);
 });
 
 Route::prefix('category')->group(function(){

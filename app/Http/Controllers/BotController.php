@@ -35,9 +35,26 @@ class BotController extends Controller
         if($validator->fails()){
             return $this->errorResponse([], $validator->errors()->first(), 422);
         }
+
         $data = $validator->validated();
-        $questions = Quiz::findOrFail($data['quiz_id'])->first();
-        $variant = QuizVariant::findOrFail($data['variant_id'])->first();
+        $questions = Quiz::findOrFail($data['quiz_id']);
+        $variant = QuizVariant::findOrFail($data['variant_id']);
+
+        $userResponseExists = UserResponse::where([
+            ['user_id', '=', $data['user_id']],
+            ['quiz_id', '=', $data['quiz_id']],
+            ['quiz_variant_id', '=', $data['variant_id']]
+            ])->exists();
+        
+        if($userResponseExists){
+            return $this->errorResponse([], "Action has already defined for the selected quiz", 400);
+        }
+        if($data['question_attempts'] > $questions->totalQuestion){
+            return $this->errorResponse([], "Oops! Questions attempts is greater than total Questions", 400);
+        }
+        if($data['duration'] < $data['question_attempts']){
+            return $this->errorResponse([], "Duration cannot be less than total number of questions question attempts", 400);
+        }
         
         $quizContents = collect($questions->quizContents)->take($data['question_attempts']);
         $botResponse = [];
@@ -47,19 +64,37 @@ class BotController extends Controller
             $botResponse[$key]['is_correct'] = true;
         }
 
-        $response = UserResponse::create([
-            'user_id' => $data['user_id'],
-            'quiz_id' => $data['quiz_id'],
-            'node_id' => $questions->node_id,
-            'quiz_variant_id' => $data['variant_id'],
-            'score' => $data['question_attempts'],
-            'responseContents' => $botResponse,
-            'status' => 'initiated',
-            'started_at' => $questions->start_time,
-            'ended_at' => $questions->start_time + $data['duration']
-        ]);
-        dd($botResponse);
-        
+        DB::beginTransaction();
+        try{
+            $response = UserResponse::create([
+                'user_id' => $data['user_id'],
+                'quiz_id' => $data['quiz_id'],
+                'node_id' => $questions->node_id,
+                'quiz_variant_id' => $data['variant_id'],
+                'score' => $data['question_attempts'],
+                'responseContents' => $botResponse,
+                'status' => 'initiated',
+                'started_at' => $questions->start_time,
+                'ended_at' => $questions->start_time + $data['duration']
+            ]);
+    
+            $userModal = User::where('id', $data['user_id'])->decrement('funds', $variant->entry_fee);
+    
+            $botActionModal = BotAction::create([
+                'user_id' => $data['user_id'],
+                'quiz_id' => $data['quiz_id'],
+                'quiz_variant_id' => $data['variant_id'],
+                'question_attempts' => $data['question_attempts'],
+                'rank' => $data['rank'],
+                'duration' => $data['duration']
+            ]);
+            DB::commit();
+            return $this->successResponse($response, "Bot Action has been set", 200); 
+        }
+        catch(\Exception $e){
+            DB::rollBack();
+            return $this->errorResponse([], "Something went wrong", 500);
+        }  
     }
 
     public function createBot(Request $request)
@@ -114,7 +149,26 @@ class BotController extends Controller
         }
     }
 
+    public function getQuizzes(Request $request)
+    {
+        $quizzes = Quiz::with(['category', 'quiz_variants'])
+                        ->where('end_time', '>', time())
+                        ->orderBy('start_time', 'ASC')
+                        ->get()->makeHidden('quizContents');
+        if($quizzes->first()){
+            return $this->successResponse($quizzes, "Records has been founded", 200);
+        }
+        return $this->errorResponse([], "No Quiz Found", 404);
+    }
 
+    public function getBots(Request $request)
+    {
+        $bots = User::where('refer_code', 'himpri_black')->get();
+        if($bots->first()){
+            return $this->successResponse($bots, "Bots successfully found", 200);
+        }
+        return $this->errorResponse([], "No Bots Found", 404);
+    }
 
     private function generateSlug($name)
     {

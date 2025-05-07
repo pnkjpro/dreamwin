@@ -209,6 +209,7 @@ class PlayQuizController extends Controller
             DB::commit();
             return $this->successResponse([], "Entry is made successfully for {$quiz->title}!", 201);
         }catch(\Exception $e){
+            DB::rollBack();
             return $this->errorResponse([], $e->getMessage(), 500);
         }
 
