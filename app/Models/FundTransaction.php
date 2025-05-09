@@ -10,6 +10,7 @@ class FundTransaction extends Model
         'user_id',
         'action',
         'amount',
+        'razorpay_order_id',
         'transaction_id',
         'description',
         'reference_id',

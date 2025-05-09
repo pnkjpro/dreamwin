@@ -58,6 +58,23 @@ return [
             'ignore_exceptions' => false,
         ],
 
+        'exception' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/exception.log'),
+            'level' => 'error',
+            'days' => 14, // Keep logs for 14 days only
+        ],
+
+        'razorpay' => [
+            'driver' => 'monolog',
+            'handler' => Monolog\Handler\RotatingFileHandler::class,
+            'with' => [
+                'filename' => storage_path('logs/razorpay.log'),
+                'maxFiles' => 0, // ⚠️ Set to 0 to keep all log files forever
+            ],
+            'level' => 'debug',
+        ],
+
         'single' => [
             'driver' => 'single',
             'path' => storage_path('logs/laravel.log'),

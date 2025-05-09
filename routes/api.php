@@ -10,6 +10,7 @@ use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\BotController;
 use App\Http\Controllers\OtpController;
+use App\Http\Controllers\RazorpayController;
 use App\Http\Controllers\Auth\UserController;
 use Illuminate\Support\Facades\Route;
 Route::get('/user', function (Request $request) {
@@ -96,3 +97,8 @@ Route::middleware('auth:sanctum')->prefix('play')->group(function(){
 
 Route::get('banner/list', [HomeController::class, 'listBanner']);
 Route::get('how/videos', [HomeController::class, 'listHowVideos']);
+
+Route::middleware('auth:sanctum')->prefix('razorpay')->group(function(){
+    Route::post('/order/create', [RazorpayController::class, 'createOrder']);
+    Route::post('/payment/verify', [RazorpayController::class, 'verifyPayment']);
+});
