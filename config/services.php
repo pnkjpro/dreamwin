@@ -31,6 +31,7 @@ return [
     'razorpay' => [
         'key' => env('RAZORPAY_KEY'),
         'secret' => env('RAZORPAY_SECRET'),
+        'webhook' => env('RAZORPAY_WEBHOOK_SECRET')
     ],
 
     'slack' => [

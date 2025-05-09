@@ -102,3 +102,4 @@ Route::middleware('auth:sanctum')->prefix('razorpay')->group(function(){
     Route::post('/order/create', [RazorpayController::class, 'createOrder']);
     Route::post('/payment/verify', [RazorpayController::class, 'verifyPayment']);
 });
+Route::post('/razorpay/webhook', [RazorpayController::class, 'handleWebhook']);
