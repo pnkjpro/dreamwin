@@ -75,15 +75,8 @@ class RazorpayController extends Controller
                 'razorpay_signature' => $request->razorpay_signature,
             ];
 
-            $fundTransaction = FundTransaction::where('razorpay_order_id', $request->razorpay_order_id)->first();
-
             $this->api->utility->verifyPaymentSignature($attributes);
-            
-            $fundTransaction->approved_status = 'approved';
-            $fundTransaction->save();
-            $user->increment('funds', $fundTransaction->amount);
 
-            \Log::channel('razorpay')->info("Payment Successful:", $fundTransaction->toArray());
             return $this->successResponse([], "Payment verified successfully", 200);
 
         } catch (\Exception $e) {
@@ -136,14 +129,7 @@ class RazorpayController extends Controller
     
     protected function handlePaymentCaptured($data)
     {
-        $payment = $data['payload']['payment']['entity'];
-        
-        Log::channel('razorpay')->info('Payment captured', [
-            'payment_id' => $payment['id'],
-            'order_id' => $payment['order_id'],
-            'amount' => $payment['amount'] / 100,
-        ]);
-        
+        $payment = $data['payload']['payment']['entity'];  
         try {
             $fundTransaction = FundTransaction::where('razorpay_order_id', $payment['order_id'])->first();
             if($fundTransaction->approved_status === 'pending' || $fundTransaction->approved_status === 'rejected'){
@@ -158,6 +144,14 @@ class RazorpayController extends Controller
             // - Update order status
             // - Trigger fulfillment process
             
+            Log::channel('razorpay')->info('Payment captured', [
+                'payment_id' => $payment['id'],
+                'name' => $user->name,
+                'email' => $user->email,
+                'mobile' => $user->mobile,
+                'order_id' => $payment['order_id'],
+                'amount' => $payment['amount'] / 100,
+            ]);
             return response()->json(['status' => 'success']);
         } catch (\Exception $e) {
             Log::channel('razorpay')->error('Failed to process payment.captured webhook', ['error' => $e->getMessage()]);
@@ -169,64 +163,26 @@ class RazorpayController extends Controller
     {
         $payment = $data['payload']['payment']['entity'];
         
-        Log::channel('razorpay')->info('Payment failed', [
-            'payment_id' => $payment['id'],
-            'order_id' => $payment['order_id'],
-            'error_code' => $payment['error_code'] ?? null,
-            'error_description' => $payment['error_description'] ?? null,
-        ]);
-        
         try {
-            $fundTransaction = FundTransaction::where('razorpay_order_id', $payment['order_id'])->first();
+            $fundTransaction = FundTransaction::with('user')->where('razorpay_order_id', $payment['order_id'])->first();
             if($fundTransaction->approved_status === 'pending'){
                 $fundTransaction->approved_status = 'rejected';
                 $fundTransaction->save();
             } 
+            Log::channel('razorpay')->info('Payment failed', [
+                'payment_id' => $payment['id'],
+                'order_id' => $payment['order_id'],
+                'name' => $fundTransaction->user->name,
+                'email' => $fundTransaction->user->email,
+                'mobile' => $fundTransaction->user->mobile,
+                'amount' => $fundTransaction->amount,
+                'error_code' => $payment['error_code'] ?? null,
+                'error_description' => $payment['error_description'] ?? null,
+            ]);
             return response()->json(['status' => 'success']);
         } catch (\Exception $e) {
             Log::channel('razorpay')->error('Failed to process payment.failed webhook', ['error' => $e->getMessage()]);
             return response()->json(['status' => 'error', 'message' => 'Failed to process webhook'], 500);
         }
     }
-  
-    /* ========   this will be used in future if refund system will be implemented ==============
-    switch case: 'refund.created'
-    protected function handleRefundCreated($data)
-    {
-        $refund = $data['payload']['refund']['entity'];
-        $paymentId = $refund['payment_id'];
-        
-        Log::channel('razorpay')->info('Refund created', [
-            'refund_id' => $refund['id'],
-            'payment_id' => $paymentId,
-            'amount' => $refund['amount'] / 100,
-        ]);
-        
-        // Update your database - record the refund
-        try {
-            // First, find the payment
-            $payment = Payment::where('payment_id', $paymentId)->first();
-            
-            if ($payment) {
-                // Create a refund record or update payment status
-                // This depends on your database schema
-                $payment->update([
-                    'status' => 'refunded',
-                    'refund_id' => $refund['id'],
-                    'refund_amount' => $refund['amount'] / 100,
-                    'refund_status' => $refund['status'],
-                    'webhook_processed_at' => now(),
-                ]);
-                
-                // You might want to log refunds in a separate table
-                // Refund::create([...]);
-            }
-            
-            return response()->json(['status' => 'success']);
-        } catch (\Exception $e) {
-            Log::channel('razorpay')->error('Failed to process refund.created webhook', ['error' => $e->getMessage()]);
-            return response()->json(['status' => 'error', 'message' => 'Failed to process webhook'], 500);
-        }
-    }
-    */
 }

@@ -62,6 +62,10 @@ class User extends Authenticatable
     public function lifelineUsages() {
         return $this->hasMany(LifelineUsage::class);
     }
+
+    public function fund_transactions(){
+        return $this->hasMany(FundTransaction::class);
+    }
     
     // Helper method to check if user has lifeline
     public function hasLifeline($lifelineId) {

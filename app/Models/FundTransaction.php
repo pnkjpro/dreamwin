@@ -17,4 +17,8 @@ class FundTransaction extends Model
         'reference_type',
         'approved_status'
     ];
+
+    public function user(){
+        return $this->belongsTo(User::class);
+    }
 }
