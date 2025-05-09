@@ -6,6 +6,7 @@ use Razorpay\Api\Api;
 use Illuminate\Support\Str;
 use App\Models\FundTransaction;
 use Illuminate\Http\Request;
+use App\Models\User;
 use Razorpay\Api\Errors\SignatureVerificationError;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -101,11 +102,6 @@ class RazorpayController extends Controller
         $payload = $request->getContent();
         $signature = $request->header('X-Razorpay-Signature');
         
-        Log::channel('razorpay')->info('Razorpay Webhook Received', [
-            'event' => $request->input('event'),
-            'signature' => $signature ? 'present' : 'missing',
-        ]);
-        
         if (!$signature) {
             Log::channel('razorpay')->warning('Razorpay webhook signature missing');
             return response()->json(['status' => 'error', 'message' => 'Signature missing'], 400);
@@ -150,7 +146,7 @@ class RazorpayController extends Controller
         
         try {
             $fundTransaction = FundTransaction::where('razorpay_order_id', $payment['order_id'])->first();
-            if($fundTransaction->approved_status === 'pending'){
+            if($fundTransaction->approved_status === 'pending' || $fundTransaction->approved_status === 'rejected'){
                 $fundTransaction->approved_status = 'approved';
                 $fundTransaction->save();
                 $user = User::findOrFail($fundTransaction->user_id);
