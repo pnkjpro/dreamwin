@@ -45,7 +45,6 @@ class OtpController extends Controller
 
         $otpModal = OtpVerification::create($data);
 
-        Mail::to($request->email)->send(new SendOtpMail($otp));
         try {
             Mail::to($request->email)->send(new SendOtpMail($otp));
         } catch (\Exception $e) {

@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 trait JsonResponseTrait
 {
@@ -35,6 +36,22 @@ trait JsonResponseTrait
             'errorMessage' => $err->getMessage(),
             'file' => $err->getFile()
         ]);
+
+        $errorData = [
+            'type'       => get_class($err),
+            'message'    => $err->getMessage(),
+            'file'       => $err->getFile(),
+            'line'       => $err->getLine(),
+            'code'       => $err->getCode(),
+            'trace'      => $err->getTraceAsString(),
+            'url'        => request()->fullUrl(),
+            'method'     => request()->method(),
+            'ip'         => request()->ip(),
+            'user_id'    => auth()->id() ?? 'Guest',
+            'timestamp'  => now()->toDateTimeString(),
+        ];
+
+        \Mail::to('himpriofficial@gmail.com')->send(new \App\Mail\ExceptionReportMail($errorData));
         
         return response()->json([
             'error' => true,

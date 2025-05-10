@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Razorpay\Api\Errors\SignatureVerificationError;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use App\Traits\JsonResponseTrait;
 
@@ -162,14 +163,16 @@ class RazorpayController extends Controller
             // - Update order status
             // - Trigger fulfillment process
             
-            Log::channel('razorpay')->info('Payment captured', [
+            $receipt = [
                 'payment_id' => $payment['id'],
                 'name' => $user->name,
                 'email' => $user->email,
                 'mobile' => $user->mobile,
                 'order_id' => $payment['order_id'],
                 'amount' => $payment['amount'] / 100,
-            ]);
+            ];
+            Log::channel('razorpay')->info('Payment captured', $receipt);
+            \Mail::to(['himpriofficial@gmail.com', $user->email])->send(new \App\Mail\PaymentReceiptMail($receipt));
             return response()->json(['status' => 'success']);
         } catch (\Exception $e) {
             Log::channel('razorpay')->error('Failed to process payment.captured webhook', ['error' => $e->getMessage()]);
