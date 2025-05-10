@@ -75,7 +75,25 @@ class RazorpayController extends Controller
                 'razorpay_signature' => $request->razorpay_signature,
             ];
 
+            // Step 1: Verify signature
             $this->api->utility->verifyPaymentSignature($attributes);
+
+            // Step 2: Fetch payment details
+            $payment = $this->api->payment->fetch($request->razorpay_payment_id);
+
+            // Step 3: Check payment status
+            if ($payment->status !== 'captured') {
+                return $this->errorResponse([], "Payment not completed. Status: {$payment->status}", 400);
+            }
+
+            $fundTransaction = FundTransaction::where('razorpay_order_id', $request->razorpay_order_id)->first();
+            
+            if ($fundTransaction && ($fundTransaction->approved_status === 'pending' || $fundTransaction->approved_status === 'rejected')) {
+                $fundTransaction->approved_status = 'approved';
+                $fundTransaction->save();
+
+                $user->increment('funds', $fundTransaction->amount);
+            }
 
             return $this->successResponse([], "Payment verified successfully", 200);
 
