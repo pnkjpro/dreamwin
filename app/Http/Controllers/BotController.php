@@ -93,7 +93,7 @@ class BotController extends Controller
         }
         catch(\Exception $e){
             DB::rollBack();
-            return $this->errorResponse([], "Something went wrong", 500);
+            return $this->exceptionHandler($e, $e->getMessage(), 500);
         }  
     }
 
@@ -145,7 +145,7 @@ class BotController extends Controller
             return $this->successResponse($bot, 'Bot created successfully', 200);
         } catch (\Exception $e) {
             DB::rollBack();
-            return $this->errorResponse([], 'Failed to create bot: ' . $e->getMessage(), 500);
+            return $this->exceptionHandler($e, 'Failed to create bot' . $e->getMessage(), 500);
         }
     }
 

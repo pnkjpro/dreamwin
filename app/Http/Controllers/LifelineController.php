@@ -185,7 +185,7 @@ class LifelineController extends Controller
 
         } catch (\Exception $e){
             DB::rollBack();
-            return $this->errorResponse([], $e->getMessage(), 500);
+            return $this->exceptionHandler($e, $e->getMessage(), 500);
         }
         
     }

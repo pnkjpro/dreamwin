@@ -11,6 +11,7 @@ use Razorpay\Api\Errors\SignatureVerificationError;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Config;
 use App\Traits\JsonResponseTrait;
 
 class RazorpayController extends Controller
@@ -142,7 +143,7 @@ class RazorpayController extends Controller
             
         } catch (\Exception $e) {
             Log::error('Error processing Razorpay webhook', ['error' => $e->getMessage()]);
-            return response()->json(['status' => 'error', 'message' => 'Server error'], 500);
+            return $this->exceptionHandler($e, 'Error processing Razorpay webhook' . $e->getMessage(), 500);
         }
     }
     
@@ -172,11 +173,12 @@ class RazorpayController extends Controller
                 'amount' => $payment['amount'] / 100,
             ];
             Log::channel('razorpay')->info('Payment captured', $receipt);
-            \Mail::to(['himpriofficial@gmail.com', $user->email])->send(new \App\Mail\PaymentReceiptMail($receipt));
+            $officialEmail = Config::get('himpri.constant.email.official');
+            \Mail::to([$officialEmail, $user->email])->send(new \App\Mail\PaymentReceiptMail($receipt));
             return response()->json(['status' => 'success']);
         } catch (\Exception $e) {
             Log::channel('razorpay')->error('Failed to process payment.captured webhook', ['error' => $e->getMessage()]);
-            return response()->json(['status' => 'error', 'message' => 'Failed to process webhook'], 500);
+            return $this->exceptionHandler($e, 'Failed to process payment.captured webhook' . $e->getMessage(), 500);
         }
     }
     
@@ -203,7 +205,7 @@ class RazorpayController extends Controller
             return response()->json(['status' => 'success']);
         } catch (\Exception $e) {
             Log::channel('razorpay')->error('Failed to process payment.failed webhook', ['error' => $e->getMessage()]);
-            return response()->json(['status' => 'error', 'message' => 'Failed to process webhook'], 500);
+            return $this->exceptionHandler($e, 'Failed to process payment.failed webhook' . $e->getMessage(), 500);
         }
     }
 }

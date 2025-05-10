@@ -4,6 +4,7 @@ namespace App\Traits;
 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Config;
 
 trait JsonResponseTrait
 {
@@ -51,7 +52,8 @@ trait JsonResponseTrait
             'timestamp'  => now()->toDateTimeString(),
         ];
 
-        \Mail::to('himpriofficial@gmail.com')->send(new \App\Mail\ExceptionReportMail($errorData));
+        $officialEmail = Config::get('himpri.constant.email.official');
+        \Mail::to($officialEmail)->send(new \App\Mail\ExceptionReportMail($errorData));
         
         return response()->json([
             'error' => true,

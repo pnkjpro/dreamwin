@@ -45,7 +45,7 @@ class TransactionController extends Controller
     
             return $this->successResponse($transaction, $message, 201);
         } catch(Exception $e){
-            return $this->errorResponse([], "Something Went Wrong, Please Try Again", 500);
+            return $this->exceptionHandler($e, $e->getMessage(), 500);
         }
     }
 
@@ -87,7 +87,7 @@ class TransactionController extends Controller
             return $this->successResponse($transaction, "Transaction has been {$data['change_approval']}", 201);
         } catch (\Exception $e) {
             DB::rollBack();
-            return $this->errorResponse([], "Something Went Wrong!", 500);
+            return $this->exceptionHandler($e, $e->getMessage(), 500);
         }
 
 

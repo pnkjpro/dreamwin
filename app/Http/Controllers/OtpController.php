@@ -49,7 +49,7 @@ class OtpController extends Controller
             Mail::to($request->email)->send(new SendOtpMail($otp));
         } catch (\Exception $e) {
             $otpModal->delete();
-            return $this->errorResponse([], 'Failed to send OTP email. Please try again later.', 500);
+            return $this->exceptionHandler($e, 'Failed to send OTP email. Please try again later.', 500);
         }
 
         return $this->successResponse([], 'OTP sent successfully!', 200);

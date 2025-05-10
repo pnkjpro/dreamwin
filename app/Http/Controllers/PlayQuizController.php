@@ -210,7 +210,7 @@ class PlayQuizController extends Controller
             return $this->successResponse([], "Entry is made successfully for {$quiz->title}!", 201);
         }catch(\Exception $e){
             DB::rollBack();
-            return $this->errorResponse([], $e->getMessage(), 500);
+            return $this->exceptionHandler($e, $e->getMessage(), 500);
         }
 
         
