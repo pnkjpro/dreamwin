@@ -38,7 +38,7 @@ class PaymentReceiptMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'email.payment-receipt',
+            view: 'emails.payment-receipt',
             with: [
                 'payment_id' => $this->data['payment_id'],
                 'name'       => $this->data['name'],
