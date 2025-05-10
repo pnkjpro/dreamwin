@@ -157,7 +157,7 @@
         
         <div class="footer">
             <p>This is an automatically generated receipt. Please keep it for your records.</p>
-            <p>&copy; {{ date('Y') }} Your Company. All rights reserved.</p>
+            <p>&copy; {{ date('Y') }} Himpri. All rights reserved.</p>
         </div>
     </div>
 </body>
