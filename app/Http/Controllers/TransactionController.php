@@ -103,7 +103,7 @@ class TransactionController extends Controller
                             ->leftjoin('users as u', function($join){
                                     $join->on('u.id', '=', 'ft.user_id');
                             })
-                            ->select('ft.id','ft.user_id','u.name', 'u.upi_id', 'ft.action', 'ft.amount', 'ft.transaction_id', 'ft.description', 'ft.approved_status')
+                            ->select('ft.id','ft.user_id','u.name', 'u.upi_id', 'ft.action', 'ft.amount', 'ft.razorpay_order_id', 'ft.description', 'ft.approved_status')
                             ->orderBy('ft.id','DESC');
         $totalCount = $transactionsQuery->count();
         $transactions = $transactionsQuery->limit($limit)->offset($offset)->get();
