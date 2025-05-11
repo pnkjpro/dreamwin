@@ -102,6 +102,7 @@ class LifelineController extends Controller
             ->leftJoin('quizzes', 'quizzes.id', '=', 'user_responses.quiz_id')
             ->leftJoin('lifelines', 'lifelines.id', '=', 'lifeline_usages.lifeline_id')
             ->select('lifelines.name as lifeline_name', 'quizzes.title as applied_quiz_name', 'lifeline_usages.used_at')
+            ->where('lifeline_usages.user_id', $user->id)
             ->orderByDesc('lifeline_usages.used_at');
         $totalCount = $usageHistoryQuery->count();
         $usageHistory = $usageHistoryQuery->limit($limit)->offset($offset)->get();
