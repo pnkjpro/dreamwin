@@ -38,7 +38,7 @@ class ExceptionReportMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'mails.exception-report',
+            view: 'emails.exception-report',
             with: $this->errorData
         );
     }

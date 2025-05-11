@@ -152,10 +152,10 @@ class RazorpayController extends Controller
         $payment = $data['payload']['payment']['entity'];  
         try {
             $fundTransaction = FundTransaction::where('razorpay_order_id', $payment['order_id'])->first();
+            $user = User::findOrFail($fundTransaction->user_id);
             if($fundTransaction->approved_status === 'pending' || $fundTransaction->approved_status === 'rejected'){
                 $fundTransaction->approved_status = 'approved';
                 $fundTransaction->save();
-                $user = User::findOrFail($fundTransaction->user_id);
                 $user->increment('funds', $fundTransaction->amount);
             }
             
