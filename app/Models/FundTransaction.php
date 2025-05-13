@@ -18,6 +18,12 @@ class FundTransaction extends Model
         'approved_status'
     ];
 
+    protected $casts = [
+        'user_id' => 'integer',
+        'amount' => 'integer',
+        'reference_id' => 'integer',
+    ];
+
     public function user(){
         return $this->belongsTo(User::class);
     }

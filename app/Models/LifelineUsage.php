@@ -11,8 +11,13 @@ class LifelineUsage extends Model
     ];
 
     protected $casts = [
-        'result_data' => 'array'
-    ];
+        'user_id' => 'integer',
+        'lifeline_id' => 'integer',
+        'user_response_id' => 'integer',
+        'question_id' => 'integer',
+        'used_at' => 'datetime',
+        'result_data' => 'array',
+    ];  
 
     public function user(){
         return $this->belongsTo(User::class);

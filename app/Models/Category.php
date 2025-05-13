@@ -17,6 +17,11 @@ class Category extends Model
         'display_order',
     ];
 
+    protected $casts = [
+        'is_active' => 'integer',
+        'display_order' => 'integer',
+    ];
+    
     public function quizzes(){
         return $this->hasMany(Quiz::class);
     }

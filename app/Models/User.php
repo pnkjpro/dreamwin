@@ -20,12 +20,15 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name', 'avatar', 'email', 'password', 'mobile', 'mobile_verified_at', 'funds', 'upi_id', 'refer_code', 'refer_by', 'is_reward_given'
+        'name', 'avatar', 'email', 'password', 'mobile', 'email_verified_at', 'mobile_verified_at', 'is_admin', 'funds', 'upi_id', 'refer_code', 'refer_by', 'is_reward_given'
     ];
 
     protected $casts = [
-        'email_verified_at' => 'datetime',
         'mobile_verified_at' => 'datetime',
+        'funds' => 'integer',
+        'is_admin' => 'boolean',
+        'refer_by' => 'integer',
+        'is_reward_given' => 'boolean',
     ];
 
     /**

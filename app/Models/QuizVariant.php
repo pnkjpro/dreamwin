@@ -11,8 +11,12 @@ class QuizVariant extends Model
     ];
 
     protected $casts = [
-        'prize_contents' => 'array'
-    ];
+        'quiz_id' => 'integer',
+        'entry_fee' => 'integer',
+        'prize' => 'integer',
+        'prize_contents' => 'array',
+        'slot_limit' => 'integer',
+    ];  
 
     public function quiz(){
         return $this->belongsTo(Quiz::class);

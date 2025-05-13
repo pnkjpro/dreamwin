@@ -13,8 +13,21 @@ class Quiz extends Model
     ];
 
     protected $casts = [
+        'category_id' => 'integer',
+        'node_id' => 'integer',
         'quizContents' => 'collection',
+        'spot_limit' => 'integer',
+        'entry_fees' => 'integer',
+        'prize_money' => 'integer',
+        'start_time' => 'integer',  // could be 'datetime' if you're using timestamps
+        'end_time' => 'integer',    // same as above
+        'quiz_timer' => 'integer',
+        'winners' => 'integer',
+        'totalQuestion' => 'integer',
+        'quiz_over_at' => 'integer',
+        'is_prize_distributed' => 'boolean',
     ];
+    
 
     public function category(){
         return $this->belongsTo(Category::class);

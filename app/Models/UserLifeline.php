@@ -10,6 +10,13 @@ class UserLifeline extends Model
         'user_id', 'lifeline_id', 'quantity', 'last_used_at'
     ];
 
+    protected $casts = [
+        'user_id' => 'integer',
+        'lifeline_id' => 'integer',
+        'quantity' => 'integer',
+        'last_used_at' => 'datetime',
+    ];    
+    
     public function user(){
         return $this->belongsTo(User::class);
     }

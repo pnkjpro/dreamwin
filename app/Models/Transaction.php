@@ -9,4 +9,10 @@ class Transaction extends Model
     protected $fillable = [
         'user_id', 'type', 'amount', 'description', 'reference_id', 'reference_type'
     ];
+
+    protected $casts = [
+        'user_id' => 'integer',
+        'amount' => 'integer',
+        'reference_id' => 'integer',
+    ]; 
 }

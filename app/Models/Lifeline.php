@@ -10,4 +10,11 @@ class Lifeline extends Model
         'name', 'alias', 'description', 'cost', 'icon', 'icon_color',
         'is_active', 'cooldown_period', 'effect_description'
     ];
+
+    protected $casts = [
+        'cost' => 'integer',
+        'is_active' => 'integer',
+        'cooldown_period' => 'integer',
+    ];
+    
 }

@@ -9,4 +9,8 @@ class HomeBanner extends Model
     protected $fillable = [
         'title', 'banner_path', 'is_active'
     ];
+
+    protected $casts = [
+        'is_active' => 'integer',
+    ];
 }

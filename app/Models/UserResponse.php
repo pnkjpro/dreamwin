@@ -11,8 +11,16 @@ class UserResponse extends Model
     ];
 
     protected $casts = [
-        'responseContents' => 'collection'
+        'user_id' => 'integer',
+        'quiz_id' => 'integer',
+        'node_id' => 'integer',
+        'quiz_variant_id' => 'integer',
+        'score' => 'integer',
+        'started_at' => 'integer',
+        'ended_at' => 'integer',
+        'responseContents' => 'collection',
     ];
+    
 
     public function lifeline_usages(){
         return $this->hasMany(LifelineUsage::class);
