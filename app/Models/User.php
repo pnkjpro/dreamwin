@@ -26,7 +26,7 @@ class User extends Authenticatable
     protected $casts = [
         'mobile_verified_at' => 'datetime',
         'funds' => 'integer',
-        'is_admin' => 'boolean',
+        'is_admin' => 'integer',
         'refer_by' => 'integer',
         'is_reward_given' => 'boolean',
     ];

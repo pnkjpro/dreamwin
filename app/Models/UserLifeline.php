@@ -13,7 +13,6 @@ class UserLifeline extends Model
     protected $casts = [
         'user_id' => 'integer',
         'lifeline_id' => 'integer',
-        'quantity' => 'integer',
         'last_used_at' => 'datetime',
     ];    
     
