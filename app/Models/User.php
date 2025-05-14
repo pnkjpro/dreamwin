@@ -20,7 +20,7 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name', 'avatar', 'email', 'password', 'mobile', 'mobile_verified_at', 'funds', 'upi_id', 'refer_code', 'refer_by', 'is_reward_given'
+        'name', 'avatar', 'email', 'email_verified_at', 'password', 'mobile', 'mobile_verified_at', 'funds', 'upi_id', 'refer_code', 'refer_by', 'is_reward_given'
     ];
 
     protected $casts = [
@@ -77,5 +77,9 @@ class User extends Authenticatable
 
     public function isAdmin(){
         return $this->is_admin === 1;
+    }
+
+    public function referredBy(){
+        return $this->belongsTo(User::class, 'refer_by');
     }
 }

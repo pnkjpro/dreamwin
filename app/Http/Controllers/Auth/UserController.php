@@ -134,9 +134,22 @@ class UserController extends Controller
         $page = $request->input('page', 1);
         $limit = Config::get('himpri.constant.adminPaginationLimit'); 
         $offset = ($page - 1) * $limit; 
-        $usersQuery = User::orderByDesc('id');
+        $usersQuery = User::with('referredBy:id,refer_code')->orderByDesc('id');
         $totalCount = $usersQuery->count();
         $users = $usersQuery->limit($limit)->offset($offset)->get();
+        $users = $users->map(function($user){
+            return [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'email_verified_at' => $user->email_verified_at,
+                'mobile' => $user->mobile,
+                'upi_id' => $user->upi_id,
+                'funds' => $user->funds,
+                'refer_code' => $user->refer_code,
+                'referred_by_code' => $user->referredBy?->refer_code,
+            ];
+        });
         return $this->successResponse([
             'totalCount' => $totalCount,
             'users' => $users
