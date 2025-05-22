@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\FundTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -48,7 +49,6 @@ class UserController extends Controller
         $referBy = null;
         if(isset($request->refer_code)){
             $referBy = User::where('refer_code',$request->refer_code)->first();
-            $referBy->increment('funds', 10); // increase the amount by 10 when referred!
             $referById = User::where('refer_code',$request->refer_code)->first()->id;
         }
 
@@ -105,6 +105,29 @@ class UserController extends Controller
             'user' => $userDetails->original['data']['user'],
             'token' => $userDetails->original['data']['token']
         ], "User details is found", 200);
+    }
+
+    public function listReferredUsers(Request $request){
+        $user = Auth::user();
+
+        $referAmountEarned = FundTransaction::where('user_id', $user->id)
+                                        ->where('action', 'referred_reward')
+                                        ->sum('amount');
+        $baseQuery = User::where('refer_by', $user->id);
+
+        // Clone base query to avoid mutation
+        $totalCount = (clone $baseQuery)->count();
+        $claimedRewards = (clone $baseQuery)->where('is_reward_given', 1)->count();
+        $pendingRewards = (clone $baseQuery)->where('is_reward_given', 0)->count();
+        $referredUsers = (clone $baseQuery)->orderByDesc('id')->get();
+
+        return $this->successResponse([
+            'referred_users' => $referredUsers,
+            'claimed_rewards' => $claimedRewards,
+            'pending_rewards' => $pendingRewards,
+            'refer_earned' => $referAmountEarned,
+            'total_referred' => $totalCount
+        ], "Referred Users Found Successfully", 200);
     }
 
     public function userDetails(Request $request)
