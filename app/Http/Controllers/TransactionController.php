@@ -32,7 +32,7 @@ class TransactionController extends Controller
             $transaction = FundTransaction::create([
                 'user_id' => $user->id,
                 'action' => $data['action'],
-                'amount' => $data['amount'],
+                'amount' => $data['action'] == 'deposit' ? $data['amount'] : -$data['amount'],
                 'transaction_id' => $data['transaction_id'] ?? ''
             ]); 
     

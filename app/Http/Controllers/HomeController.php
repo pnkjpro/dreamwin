@@ -89,18 +89,6 @@ class HomeController extends Controller
     }
 
     public function runQuery(){
-        //write your main query
-
-        DB::beginTransaction();
-        try{
-            //execute your query
-
-            DB::commit();
-            return response()->json("Query is successful!");
-        } catch(\Exception $e){
-            DB::rollBack();
-            return response()->json($e);
-        }
+        //
     }
-
 }

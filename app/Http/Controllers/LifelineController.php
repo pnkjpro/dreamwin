@@ -7,7 +7,7 @@ use App\Models\Lifeline;
 use App\Models\UserLifeline;
 use App\Models\LifelineUsage;
 use App\Models\User;
-use App\Models\Transaction;
+use App\Models\FundTransaction;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -80,8 +80,8 @@ class LifelineController extends Controller
         $page = $request->input('page', 1);
         $limit = Config::get('himpri.constant.dashboardPaginationLimit'); 
         $offset = ($page - 1) * $limit; 
-        $transactionsQuery = Transaction::where('user_id', $user->id)
-                                ->where('type', 'lifeline_purchase')
+        $transactionsQuery = FundTransaction::where('user_id', $user->id)
+                                ->where('action', 'lifeline_purchase')
                                 ->orderBy('id', 'DESC');
         $totalCount = $transactionsQuery->count();
         $transactions = $transactionsQuery->limit($limit)->offset($offset)->get();
@@ -162,13 +162,14 @@ class LifelineController extends Controller
             );
             
             // Record the transaction
-            Transaction::create([
+            FundTransaction::create([
                 'user_id' => $user->id,
-                'type' => 'lifeline_purchase',
+                'action' => 'lifeline_purchase',
                 'amount' => -$totalCost,
                 'description' => "Purchased {$request->quantity} {$lifeline->name} lifeline(s)",
                 'reference_id' => $lifeline->id,
-                'reference_type' => Lifeline::class
+                'reference_type' => Lifeline::class,
+                'approved_status' => 'approved'
             ]);
 
             DB::commit();

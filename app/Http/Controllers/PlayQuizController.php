@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 use App\Models\Quiz;
 use App\Models\QuizVariant;
 use App\Models\UserResponse;
-use App\Models\Transaction;
 use App\Models\FundTransaction;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -207,17 +206,18 @@ class PlayQuizController extends Controller
 
             // If reward has not yet been claimed, process referral reward
             if($entryFee > 0 && $user->is_reward_given === 0){
-                $this->referalRewardLifeline($user);
+                $this->claimReferalRewardAmount($user);
             }
     
             // Record the transaction
-            Transaction::create([
+            FundTransaction::create([
                 'user_id' => $user->id,
-                'type' => 'Quiz Entry',
+                'action' => 'quiz_entry',
                 'amount' => -$entryFee,
                 'description' => "Made Entry of {$entryFee} for {$quiz->title} quiz",
                 'reference_id' => $userResponse->id,
-                'reference_type' => UserResponse::class
+                'reference_type' => UserResponse::class,
+                'approved_status' => 'approved'
             ]);
 
             DB::commit();
@@ -228,20 +228,22 @@ class PlayQuizController extends Controller
         }    
     }
 
-    private function referalRewardLifeline($user){
+    private function claimReferalRewardAmount($user){
         if (!$user->refer_by) {
             return;
         }
-
+        $referAmount = Config::get('himpri.constant.referral_reward_amount') ?? 10;
         FundTransaction::create([
             'user_id' => $user->refer_by,
             'action' => 'referred_reward',
-            'amount' => Config::get('himpri.constant.referral_reward_amount') ?? 10,
+            'amount' => $referAmount,
             'description' => "Referral Amount Credited for {$user->name}!",
             'reference_id' => $user->id,
             'reference_type' => User::class,
             'approved_status' => 'approved'
         ]);
+
+        $referByUser = User::increment('funds', $referAmount)->where('id', 'refer_by');
 
         // now the reward has been claimed
         $user->update(['is_reward_given' => 1]);
