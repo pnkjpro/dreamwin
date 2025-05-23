@@ -5,9 +5,13 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Traits\JsonResponseTrait;
 use App\Models\HomeBanner;
+use App\Models\FundTransaction;
+use App\Models\User;
 use App\Models\HowVideos;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class HomeController extends Controller
@@ -50,7 +54,11 @@ class HomeController extends Controller
 
     public function listBanner(){
         $banners = HomeBanner::all();
-        return $this->successResponse($banners, "banners has been fetched!", 200);
+        return $this->successResponse([
+            'banners' => $banners,
+            'official_notice' => Config::get('himpri.constant.official_notice'),
+            'official_notice_status' => Config::get('himpri.constant.official_notice_status'),
+        ], "banners has been fetched!", 200);
     }
 
     public function updateHowVideos(Request $request){
@@ -78,6 +86,21 @@ class HomeController extends Controller
     public function listHowVideos(){
         $videos = HowVideos::all();
         return $this->successResponse($videos, 'videos has been fetched', 200);
+    }
+
+    public function runQuery(){
+        //write your main query
+
+        DB::beginTransaction();
+        try{
+            //execute your query
+
+            DB::commit();
+            return response()->json("Query is successful!");
+        } catch(\Exception $e){
+            DB::rollBack();
+            return response()->json($e);
+        }
     }
 
 }
