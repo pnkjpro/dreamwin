@@ -8,5 +8,6 @@ return [
     'dashboardPaginationLimit' => 20,
     'email' => [
         'official' => 'himpriofficial@gmail.com'
-    ]
+    ],
+    'referral_reward_amount' => 10
 ];
