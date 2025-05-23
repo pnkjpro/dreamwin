@@ -8,6 +8,7 @@ use App\Models\Quiz;
 use App\Models\QuizVariant;
 use App\Models\UserResponse;
 use App\Models\Transaction;
+use App\Models\FundTransaction;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -170,13 +171,22 @@ class PlayQuizController extends Controller
         $user = Auth::user();
         $validated = $validator->validated();
         $quiz = Quiz::where('node_id', $validated['node_id'])->first();
+        $variant = QuizVariant::where('quiz_id', $quiz->id)->where('id', $validated['variant_id'])->first();
+
+        $isSpotLimitExceeded = UserResponse::where('quiz_id', $quiz->id)
+                                    ->where('quiz_variant_id', $variant->id)
+                                    ->count();
+
+        if($isSpotLimitExceeded >= $variant->slot_limit){
+            return $this->errorResponse([], "Slot limit is filled completely!", 400);
+        }
+
         $isUserResponseExists = UserResponse::where('quiz_id', $quiz->id)
                                             ->where('user_id', $user->id)
                                             ->whereIn('status', ['joined', 'initiated', 'completed'])->first();
         if(isset($isUserResponseExists)){
             return $this->errorResponse([], "You have already Joined the Game", 422);
         }
-        $variant = QuizVariant::where('quiz_id', $quiz->id)->where('id', $validated['variant_id'])->first();
         $entryFee = $variant->entry_fee;
         // Check if user has enough funds
         if ($user->funds < $entryFee) {
@@ -185,7 +195,6 @@ class PlayQuizController extends Controller
 
         DB::beginTransaction();
         try{
-            
             $userResponse = new UserResponse();
             $userResponse->quiz_id = $quiz->id;
             $userResponse->user_id = $user->id;
@@ -195,6 +204,11 @@ class PlayQuizController extends Controller
             $userResponse->save();
     
             $user->decrement('funds', $entryFee);
+
+            // If reward has not yet been claimed, process referral reward
+            if($entryFee > 0 && $user->is_reward_given === 0){
+                $this->referalRewardLifeline($user);
+            }
     
             // Record the transaction
             Transaction::create([
@@ -211,8 +225,25 @@ class PlayQuizController extends Controller
         }catch(\Exception $e){
             DB::rollBack();
             return $this->exceptionHandler($e, $e->getMessage(), 500);
+        }    
+    }
+
+    private function referalRewardLifeline($user){
+        if (!$user->refer_by) {
+            return;
         }
 
-        
+        FundTransaction::create([
+            'user_id' => $user->refer_by,
+            'action' => 'referred_reward',
+            'amount' => Config::get('himpri.constant.referral_reward_amount') ?? 10,
+            'description' => "Referral Amount Credited for {$user->name}!",
+            'reference_id' => $user->id,
+            'reference_type' => User::class,
+            'approved_status' => 'approved'
+        ]);
+
+        // now the reward has been claimed
+        $user->update(['is_reward_given' => 1]);
     }
 }

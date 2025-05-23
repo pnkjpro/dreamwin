@@ -229,7 +229,7 @@ class QuizController extends Controller
 
                     FundTransaction::create([
                         'user_id' => $rank->user_id,
-                        'action' => 'deposit',
+                        'action' => 'quiz_reward',
                         'amount' => $rewardAmount,
                         'description' => "Quiz Reward Credited for {$quiz->title}!",
                         'reference_id' => $rank->response_id,

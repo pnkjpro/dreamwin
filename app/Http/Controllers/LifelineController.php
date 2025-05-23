@@ -147,13 +147,7 @@ class LifelineController extends Controller
             // Lock user row to prevent race conditions
             $user = User::where('id', $user->id)->lockForUpdate()->first();
 
-             // If reward has not yet been claimed, process referral reward
-            // Disable this feature for now
-             // if($user->is_reward_given === 0){
-            //     $this->referalRewardLifeline($user);
-            // }
-
-                // Process the purchase
+            // Process the purchase
             $user->decrement('funds', $totalCost);
             
             // Add lifeline to user's inventory
@@ -189,31 +183,6 @@ class LifelineController extends Controller
             return $this->exceptionHandler($e, $e->getMessage(), 500);
         }
         
-    }
-
-    private function referalRewardLifeline($user){
-        if (!$user->refer_by) {
-            return;
-        }
-
-        UserLifeline::create([
-            'user_id' => $user->refer_by, //this is the user to whom the reward is given
-            'lifeline_id' => 3, //revive lifeine given as reward
-            'quantity' => 1
-        ]);
-
-        // Record the transaction
-        Transaction::create([
-            'user_id' => $user->id,
-            'type' => 'referral_reward',
-            'amount' => 0, // free rewards
-            'description' => "Rewarded 1 Revive lifeline",
-            'reference_id' => 3, //revive lifeline given
-            'reference_type' => Lifeline::class
-        ]);
-
-        // now the reward has been claimed
-        $user->update(['is_reward_given' => 1]);
     }
 
     public function storeLifelineUsage(Request $request)

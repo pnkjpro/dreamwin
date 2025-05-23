@@ -82,6 +82,7 @@ Route::prefix('users')->group(function(){
     Route::post('/otp/send', [OtpController::class, 'sendOtp']);
     Route::post('/otp/verify', [OtpController::class, 'verifyOtp']);
     Route::middleware('auth:sanctum')->post('/password/reset', [UserController::class, 'updatePassword']);
+    Route::middleware('auth:sanctum')->get('/refer/list', [UserController::class, 'listReferredUsers']);
 });
 
 Route::middleware('auth:sanctum')->prefix('funds')->group(function(){
