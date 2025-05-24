@@ -89,17 +89,28 @@ class HomeController extends Controller
     }
 
     public function runQuery(){
-        $users = User::where('email', 'not like', '%@himpri.com')->get();
+        $skipUsers = [1,3,54];
+        $users = User::where('email', 'not like', '%@himpri.com')
+                        ->whereNotIn('id',)->get();
         $result = [];
         foreach($users as $user){
-            $funds = (int) FundTransaction::where('user_id', $user->id)->sum('amount');
+            $funds = (int) FundTransaction::where('user_id', $user->id)
+                                            ->where('approved_status', 'approved')
+                                            ->sum('amount');
             if($user->funds == $funds){
                 $result['verified_funds'][] = $user ->id;
             } else {
-                $result['mismatched_funds']['user'][$user->id]['net_diff'] = $funds - $user->funds; 
+                if($user->funds > $funds){
+                    $result['mismatched_funds']['user']['over'][$user->id]['net_diff'] = $funds - $user->funds; 
+                } else if($funds > $user->funds){
+                    $result['mismatched_funds']['user']['under'][$user->id]['net_diff'] = $funds - $user->funds; 
+                }
             }
         }
-        dd(count($result['verified_funds']), count($result['mismatched_funds']['user']));
+        $result['metainfo']['counts']['verified_funds'] = count($result['verified_funds']);
+        $result['metainfo']['counts']['mismatched_funds']['over'] = count($result['mismatched_funds']['user']['over']);
+        $result['metainfo']['counts']['mismatched_funds']['under'] = count($result['mismatched_funds']['user']['under']);
+        
         return response()->json($result);
     }
 }

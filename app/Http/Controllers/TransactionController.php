@@ -28,6 +28,9 @@ class TransactionController extends Controller
         }
         $data = $validator->validated();
         $user = Auth::user();
+        if($data['action'] == 'withdraw' && $amount > $user->funds){
+            return $this->errorResponse([], "You have insufficient balance!", 422);
+        }
         $isPendingWithdrawalExists = FundTransaction::where('user_id', $user->id)
                                                         ->where('action', 'withdraw')
                                                         ->where('approved_status', 'pending')
@@ -72,20 +75,20 @@ class TransactionController extends Controller
         
         $user = User::findOrFail($data['uid']);
         $transaction = FundTransaction::findOrFail($data['approval_id']);
-
+        $amount = abs($transaction->amount);
         DB::beginTransaction();
         try {
             $transaction->update(['approved_status' => $data['change_approval']]);
 
             if ($data['change_approval'] == 'approved') {
                 if ($transaction->action == 'deposit') {
-                    $user->increment('funds', $transaction->amount);
+                    $user->increment('funds', $amount);
                 } elseif ($transaction->action == 'withdraw') {
-                    if ($user->funds >= $transaction->amount) {
-                        $user->decrement('funds', $transaction->amount);
+                    if ($user->funds >= $amount) {
+                        $user->decrement('funds', $amount);
                     } else {
                         DB::rollBack();
-                        return response()->json(['error' => 'Insufficient funds for withdrawal.'], 400);
+                        return $this->errorResponse([], 'Insufficient funds for withdrawal', 422);
                     }
                 }
             }
