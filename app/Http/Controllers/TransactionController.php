@@ -28,7 +28,7 @@ class TransactionController extends Controller
         }
         $data = $validator->validated();
         $user = Auth::user();
-        if($data['action'] == 'withdraw' && $amount > $user->funds){
+        if($data['action'] == 'withdraw' && $data['amount'] > $user->funds){
             return $this->errorResponse([], "You have insufficient balance!", 422);
         }
         $isPendingWithdrawalExists = FundTransaction::where('user_id', $user->id)
