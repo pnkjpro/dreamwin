@@ -207,7 +207,10 @@ class PlayQuizController extends Controller
 
             // If reward has not yet been claimed, process referral reward
             if($entryFee >= 49 && $user->is_reward_given === 0){
-                $this->claimReferalRewardAmount($user);
+                $result = $this->claimReferalRewardAmount($user);
+                if($result->original['error']){
+                    return $this->errorResponse([], $result->original['message'], 400);
+                }
             }
     
             // Record the transaction
@@ -234,19 +237,27 @@ class PlayQuizController extends Controller
             return;
         }
         $referAmount = Config::get('himpri.constant.referral_reward_amount') ?? 10;
-        FundTransaction::create([
-            'user_id' => $user->refer_by,
-            'action' => 'referred_reward',
-            'amount' => $referAmount,
-            'description' => "Referral Amount Credited for {$user->name}!",
-            'reference_id' => $user->id,
-            'reference_type' => User::class,
-            'approved_status' => 'approved'
-        ]);
+        DB::beginTransaction();
+        try{
+            FundTransaction::create([
+                'user_id' => $user->refer_by,
+                'action' => 'referred_reward',
+                'amount' => $referAmount,
+                'description' => "Referral Amount Credited for {$user->name}!",
+                'reference_id' => $user->id,
+                'reference_type' => User::class,
+                'approved_status' => 'approved'
+            ]);
+    
+            User::where('id', $user->refer_by)->increment('funds', $referAmount);
+    
+            // now the reward has been claimed
+            $user->update(['is_reward_given' => 1]);
 
-        User::where('id', $user->refer_by)->increment('funds', $referAmount);
-
-        // now the reward has been claimed
-        $user->update(['is_reward_given' => 1]);
+            DB::commit();
+        } catch(\Exception $e){
+            DB::rollBack();
+            return $this->exceptionHandler($e, $e->getMessage(), 400);
+        }
     }
 }
