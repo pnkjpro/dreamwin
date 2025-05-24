@@ -24,10 +24,17 @@ class TransactionController extends Controller
             'transaction_id' => 'required_if:action,deposit|string|max:22'
         ]);
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return $this->errorResponse([], $validator->errors()->first(), 422);
         }
         $data = $validator->validated();
         $user = Auth::user();
+        $isPendingWithdrawalExists = FundTransaction::where('user_id', $user->id)
+                                                        ->where('action', 'withdraw')
+                                                        ->where('approved_status', 'pending')
+                                                        ->exists();
+        if($isPendingWithdrawalExists){
+            return $this->errorResponse([], "You already have a pending withdrawal request!");
+        }
         try {
             $transaction = FundTransaction::create([
                 'user_id' => $user->id,
@@ -58,7 +65,7 @@ class TransactionController extends Controller
 
         
         if($validator->fails()){
-            return response()->json(['error' => $validator->errors()], 422);
+            return $this->errorResponse([], $validator->errors()->first(), 422);
         }
         
         $data = $validator->validated();
