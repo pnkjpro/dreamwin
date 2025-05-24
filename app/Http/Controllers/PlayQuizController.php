@@ -206,10 +206,10 @@ class PlayQuizController extends Controller
             $user->decrement('funds', $entryFee);
 
             // If reward has not yet been claimed, process referral reward
-            if($entryFee >= 49 && $user->is_reward_given === 0){
+            if($entryFee >= 49 && $user->is_reward_given === 0 && isset($user->refer_by)){
                 $result = $this->claimReferalRewardAmount($user);
-                if($result->original['error']){
-                    throw new \Exception($result->original['message']);
+                if(isset($result['error']) && $result['error']){
+                    throw new \Exception($result['message']);
                 }
             }
     
@@ -233,9 +233,6 @@ class PlayQuizController extends Controller
     }
 
     private function claimReferalRewardAmount($user){
-        if (!$user->refer_by) {
-            return;
-        }
         $referAmount = Config::get('himpri.constant.referral_reward_amount') ?? 10;
         DB::beginTransaction();
         try{
@@ -255,9 +252,17 @@ class PlayQuizController extends Controller
             $user->update(['is_reward_given' => 1]);
 
             DB::commit();
+            return [
+                'error' => false,
+                'message' => 'Referral reward granted successfully.'
+            ];
         } catch(\Exception $e){
             DB::rollBack();
-            return $this->exceptionHandler($e, $e->getMessage(), 400);
+            return [
+                'error' => true,
+                'message' => 'Something went wrong while processing the referral reward.'
+            ];
+
         }
     }
 }
