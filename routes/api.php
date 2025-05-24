@@ -39,7 +39,9 @@ Route::middleware(['auth:sanctum','isAdmin'])->prefix('admin')->group(function()
     Route::post('/quiz/create', [QuizController::class, 'store']);
     Route::post('/variant/create', [QuizController::class, 'createVariant']);
     Route::post('/transaction/approval', [TransactionController::class, 'fundApproval']);
-    Route::get('/transaction/list/all', [TransactionController::class, 'listAllTransactions']);
+    // Route::get('/transaction/list/all', [TransactionController::class, 'listAllTransactions']);
+    Route::get('/transaction/list/all', [TransactionController::class, 'getAllTransactions']);
+    Route::get('/transaction/stats', [TransactionController::class, 'getTransactionStats']);
     Route::post('/banner/update', [HomeController::class, 'updateBanner']);
     Route::post('/lifeline/update', [LifelineController::class, 'updateLifeline']);
     Route::post('/category/create', [CategoryController::class, 'store']);
