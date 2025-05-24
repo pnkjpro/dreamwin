@@ -206,7 +206,7 @@ class PlayQuizController extends Controller
             $user->decrement('funds', $entryFee);
 
             // If reward has not yet been claimed, process referral reward
-            if($entryFee > 0 && $user->is_reward_given === 0){
+            if($entryFee >= 49 && $user->is_reward_given === 0){
                 $this->claimReferalRewardAmount($user);
             }
     
@@ -244,7 +244,7 @@ class PlayQuizController extends Controller
             'approved_status' => 'approved'
         ]);
 
-        $referByUser = User::increment('funds', $referAmount)->where('id', $user->refer_by);
+        User::where('id', $user->refer_by)->increment('funds', $referAmount);
 
         // now the reward has been claimed
         $user->update(['is_reward_given' => 1]);
