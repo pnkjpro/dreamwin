@@ -209,7 +209,7 @@ class PlayQuizController extends Controller
             if($entryFee >= 49 && $user->is_reward_given === 0){
                 $result = $this->claimReferalRewardAmount($user);
                 if($result->original['error']){
-                    return $this->errorResponse([], $result->original['message'], 400);
+                    throw new \Exception($result->original['message']);
                 }
             }
     

@@ -10,6 +10,7 @@ use App\Models\LifelineUsage;
 use App\Models\UserResponse;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use App\Traits\JsonResponseTrait;
 
 
@@ -80,21 +81,27 @@ class LifelineUsageController extends Controller
             return $this->errorResponse([], $result->original['message'], 422);
         }
 
-        // Record lifeline usage
-        LifelineUsage::create([
-            'user_id' => $user->id,
-            'lifeline_id' => $request->lifeline_id,
-            'user_response_id' => $userResponse->id,
-            'question_id' => $request->question_id,
-            'used_at' => now(),
-            'result_data' => json_encode($result->original['data'])
-        ]);
-        
-        // Decrement lifeline quantity
-        $userLifeline->decrement('quantity');
-        $userLifeline->update(['last_used_at' => now()]);
-
-        return $this->successResponse($result->original['data'], $result->original['message'], 200);
+        DB::beginTransaction();
+        try{
+            // Record lifeline usage
+            LifelineUsage::create([
+                'user_id' => $user->id,
+                'lifeline_id' => $request->lifeline_id,
+                'user_response_id' => $userResponse->id,
+                'question_id' => $request->question_id,
+                'used_at' => now(),
+                'result_data' => json_encode($result->original['data'])
+            ]);
+            
+            // Decrement lifeline quantity
+            $userLifeline->decrement('quantity');
+            $userLifeline->update(['last_used_at' => now()]);
+            DB::commit();
+            return $this->successResponse($result->original['data'], $result->original['message'], 200);
+        } catch(\Exception $e){
+            DB::rollBack();
+            return $this->exceptionHandler($e, $e->getMessage(), 500);
+        }
     }
 
     // Check if lifeline was used for a specific question
