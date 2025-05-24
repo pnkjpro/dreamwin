@@ -244,7 +244,7 @@ class PlayQuizController extends Controller
             'approved_status' => 'approved'
         ]);
 
-        $referByUser = User::increment('funds', $referAmount)->where('id', 'refer_by');
+        $referByUser = User::increment('funds', $referAmount)->where('id', $user->refer_by);
 
         // now the reward has been claimed
         $user->update(['is_reward_given' => 1]);
