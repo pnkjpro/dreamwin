@@ -291,7 +291,7 @@ class QuizController extends Controller
             return $this->errorResponse([], $validator->errors()->first(), 422);
         }
 
-        $leaderboard = Leaderboard::select('name', 'rank', 'score', 'duration', 'reward')->where('quiz_id', $request->quiz_id)->orderBy('rank')->get();
+        $leaderboard = Leaderboard::with('user')->select('user_id','name', 'rank', 'score', 'duration', 'reward')->where('quiz_id', $request->quiz_id)->orderBy('rank')->get();
 
         if ($leaderboard->isNotEmpty()) {
             return $this->successResponse($leaderboard, "Leaderboard has been fetched!", 200);
