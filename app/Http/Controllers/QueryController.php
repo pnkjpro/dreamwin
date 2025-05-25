@@ -29,7 +29,7 @@ class QueryController extends Controller
                                             ->where('approved_status', 'approved')
                                             ->sum('amount');
             if($user->funds == $funds){
-                $result['verified_funds'][] = $user ->id;
+                // $result['verified_funds'][] = $user ->id;
             } else {
                 $adjusted_amt = $funds - $user->funds;
                 // User::find($user->id)->increment('funds', $adjusted_amt);
@@ -40,7 +40,7 @@ class QueryController extends Controller
                 }
             }
         }
-        $result['metainfo']['counts']['verified_funds'] = count($result['verified_funds']);
+        // $result['metainfo']['counts']['verified_funds'] = count($result['verified_funds']);
         $result['metainfo']['counts']['mismatched_funds']['over'] = isset($result['mismatched_funds']) ? count($result['mismatched_funds']['user']['over']) : 0;
         $result['metainfo']['counts']['mismatched_funds']['under'] = isset($result['mismatched_funds']) ? count($result['mismatched_funds']['user']['under']) : 0;  
         
