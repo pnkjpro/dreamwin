@@ -51,6 +51,7 @@ class QueryController extends Controller
         $result = FundTransaction::where('email', 'not like', '%@himpri.com')
                                     ->whereIn('action', ['deposit', 'withdraw'])
                                     ->whereNotIn('user_id', $this->skipUsers)
+                                    ->where('approved_status', 'approved')
                                     ->sum('amount');
         return response()->json($result);
     }

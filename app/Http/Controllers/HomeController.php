@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Traits\JsonResponseTrait;
 use App\Models\HomeBanner;
 use App\Models\FundTransaction;
+use App\Models\Variable;
 use App\Models\User;
 use App\Models\HowVideos;
 use Illuminate\Support\Facades\Validator;
@@ -53,10 +54,11 @@ class HomeController extends Controller
     }
 
     public function listBanner(){
+        $official_notice = Variable::where('name', 'official_notice')->firstOrFail();
         $banners = HomeBanner::all();
         return $this->successResponse([
             'banners' => $banners,
-            'official_notice' => Config::get('himpri.constant.official_notice'),
+            'official_notice' => $official_notice['value']['official_notice'],
             'official_notice_status' => Config::get('himpri.constant.official_notice_status'),
         ], "banners has been fetched!", 200);
     }

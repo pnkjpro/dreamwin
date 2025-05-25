@@ -6,5 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Variable extends Model
 {
-    //
+    protected $fillable = [
+        'name', 'value'
+    ];
+
+    protected $casts = [
+        'value' => 'array'
+    ];
 }
