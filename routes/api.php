@@ -105,4 +105,7 @@ Route::middleware('auth:sanctum')->prefix('razorpay')->group(function(){
 });
 Route::post('/razorpay/webhook', [RazorpayController::class, 'handleWebhook']);
 
-Route::get('/run/query', [HomeController::class, 'runQuery']); // hit your run query
+Route::middleware(['auth:sanctum', 'isAdmin'])->prefix('run')->group(function(){
+    Route::get('/net/funds', [QueryController::class, 'fundsNetDifference']);
+    Route::get('/net/profit', [QueryController::class, 'netProfit']);
+});
