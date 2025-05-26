@@ -11,13 +11,15 @@ use App\Models\LifelineUsage;
 use App\Models\Quiz;
 use App\Models\QuizVariant;
 use App\Models\FundTransaction;
+use Illuminate\Support\Facades\DB;
+
 
 class QueryController extends Controller
 {
     public $skipUsers;
 
     public function __construct(){
-        $this->skipUsers = [1,3,54];
+        $this->skipUsers = [1,54];
     }
 
     public function fundsNetDifference(){
@@ -41,18 +43,31 @@ class QueryController extends Controller
             }
         }
         // $result['metainfo']['counts']['verified_funds'] = count($result['verified_funds']);
-        $result['metainfo']['counts']['mismatched_funds']['over'] = isset($result['mismatched_funds']) ? count($result['mismatched_funds']['user']['over']) : 0;
-        $result['metainfo']['counts']['mismatched_funds']['under'] = isset($result['mismatched_funds']) ? count($result['mismatched_funds']['user']['under']) : 0;  
+        $result['metainfo']['counts']['mismatched_funds']['over'] = isset($result['mismatched_funds']['user']['over']) ? count($result['mismatched_funds']['user']['over']) : 0;
+        $result['metainfo']['counts']['mismatched_funds']['under'] = isset($result['mismatched_funds']['user']['under']) ? count($result['mismatched_funds']['user']['under']) : 0;  
         
         return response()->json($result);
     }
 
     public function netProfit(Request $request){
-        $result = FundTransaction::where('email', 'not like', '%@himpri.com')
-                                    ->whereIn('action', ['deposit', 'withdraw'])
-                                    ->whereNotIn('user_id', $this->skipUsers)
-                                    ->where('approved_status', 'approved')
-                                    ->sum('amount');
+        $result = DB::table('fund_transactions as ft')
+                            ->leftJoin('users as u', 'ft.user_id', '=', 'u.id')
+                            ->where('u.email', 'not like', '%@himpri.com')
+                            ->whereIn('ft.action', ['deposit', 'withdraw'])
+                            ->whereNotIn('ft.user_id', $this->skipUsers)
+                            ->where('ft.approved_status', 'approved')
+                            ->sum('ft.amount');
         return response()->json($result);
+    }
+
+    public function netWithdrawal(Request $request){
+        $netWithdrawal = DB::table('fund_transactions as ft')
+                            ->leftJoin('users as u', 'ft.user_id', '=', 'u.id')
+                            ->where('ft.action', 'withdraw')
+                            ->where('ft.approved_status', 'approved')
+                            ->whereNotIn('ft.user_id', $this->skipUsers)
+                            ->where('u.email', 'not like', '%@himpri.com')
+                            ->sum('ft.amount');
+        return response()->json($netWithdrawal);
     }
 }
