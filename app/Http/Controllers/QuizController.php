@@ -300,6 +300,37 @@ class QuizController extends Controller
         return $this->errorResponse([], "Leaderboard has not been prepared yet!", 404);
     }
 
+    public function showAnswerKey(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'node_id' => 'required|exists:user_responses,node_id'
+        ]);
+
+        if ($validator->fails()) {
+            return $this->errorResponse([], $validator->errors()->first(), 422);
+        }
+
+        $data = $validator->validated();
+        $nodeId = $data['node_id'];
+        $userId = Auth::user()->id;
+        $quiz = Quiz::where('node_id', $nodeId)->first();
+        $query = UserResponse::where('node_id', $nodeId);
+        $userQuery = $query->where('user_id', $userId)->select('score', 'responseContents')->first();
+        $userPoints = $userQuery->score;
+
+        $quizAnswerSheet = collect($quiz->quizContents)->keyBy('id');
+        $userAnswers = $userQuery->responseContents;
+        $answerKey = [];
+        foreach($userAnswers as $answer){
+            $answerKey[$answer['question_id']]['question'] = $quizAnswerSheet[$answer['question_id']]['question'];
+            $answerKey[$answer['question_id']]['options'] = $quizAnswerSheet[$answer['question_id']]['options'];
+            $answerKey[$answer['question_id']]['user_answer_id'] = $answer['answer_id'];
+            $answerKey[$answer['question_id']]['correct_answer_id'] = $quizAnswerSheet[$answer['question_id']]['correctAnswerId'];
+            $answerKey[$answer['question_id']]['is_correct'] = $answer['is_correct'];
+        }
+        return $this->successResponse($answerKey, "User Response has been fetched Successfully!", 200);
+    }
+
 
     public function listAdminLeaderboard(Request $request)
     {
