@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('variables', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->json('value');
+            $table->string('name')->unique();
+            $table->json('value'); // Use `json` column type
             $table->timestamps();
         });
     }

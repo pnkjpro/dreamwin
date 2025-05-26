@@ -8,6 +8,8 @@ use App\Http\Controllers\LifelineUsageController;
 use App\Http\Controllers\PlayQuizController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\QueryController;
+use App\Http\Controllers\VariableController;
 use App\Http\Controllers\BotController;
 use App\Http\Controllers\OtpController;
 use App\Http\Controllers\RazorpayController;
@@ -52,6 +54,13 @@ Route::middleware(['auth:sanctum','isAdmin'])->prefix('admin')->group(function()
     Route::get('/user/list', [UserController::class, 'userList']);
     Route::get('/quiz/list', [QuizController::class, 'quizList']);
     Route::get('/show/quiz/users', [QuizController::class, 'quizByNodeId']);
+
+    Route::get('variables', [VariableController::class, 'index']);
+    Route::post('variables', [VariableController::class, 'store']);
+    Route::get('variables/{name}', [VariableController::class, 'show']);
+    Route::post('variables/update', [VariableController::class, 'update']);
+    Route::delete('variables/{name}', [VariableController::class, 'destroy']);
+
 });
 
 Route::prefix('bot')->group(function(){
@@ -107,4 +116,7 @@ Route::middleware('auth:sanctum')->prefix('razorpay')->group(function(){
 });
 Route::post('/razorpay/webhook', [RazorpayController::class, 'handleWebhook']);
 
-Route::get('/run/query', [HomeController::class, 'runQuery']); // hit your run query
+Route::middleware(['auth:sanctum', 'isAdmin'])->prefix('run')->group(function(){
+    Route::get('/net/funds', [QueryController::class, 'fundsNetDifference']);
+    Route::get('/net/profit', [QueryController::class, 'netProfit']);
+});

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Traits\JsonResponseTrait;
 use App\Models\HomeBanner;
 use App\Models\FundTransaction;
+use App\Models\Variable;
 use App\Models\User;
 use App\Models\HowVideos;
 use Illuminate\Support\Facades\Validator;
@@ -53,10 +54,11 @@ class HomeController extends Controller
     }
 
     public function listBanner(){
+        $official_notice = Variable::where('name', 'official_notice')->firstOrFail();
         $banners = HomeBanner::all();
         return $this->successResponse([
             'banners' => $banners,
-            'official_notice' => Config::get('himpri.constant.official_notice'),
+            'official_notice' => $official_notice['value']['official_notice'],
             'official_notice_status' => Config::get('himpri.constant.official_notice_status'),
         ], "banners has been fetched!", 200);
     }
@@ -86,31 +88,5 @@ class HomeController extends Controller
     public function listHowVideos(){
         $videos = HowVideos::all();
         return $this->successResponse($videos, 'videos has been fetched', 200);
-    }
-
-    public function runQuery(){
-        $skipUsers = [1,3,54];
-        $users = User::where('email', 'not like', '%@himpri.com')
-                        ->whereNotIn('id',)->get();
-        $result = [];
-        foreach($users as $user){
-            $funds = (int) FundTransaction::where('user_id', $user->id)
-                                            ->where('approved_status', 'approved')
-                                            ->sum('amount');
-            if($user->funds == $funds){
-                $result['verified_funds'][] = $user ->id;
-            } else {
-                if($user->funds > $funds){
-                    $result['mismatched_funds']['user']['over'][$user->id]['net_diff'] = $funds - $user->funds; 
-                } else if($funds > $user->funds){
-                    $result['mismatched_funds']['user']['under'][$user->id]['net_diff'] = $funds - $user->funds; 
-                }
-            }
-        }
-        $result['metainfo']['counts']['verified_funds'] = count($result['verified_funds']);
-        $result['metainfo']['counts']['mismatched_funds']['over'] = count($result['mismatched_funds']['user']['over']);
-        $result['metainfo']['counts']['mismatched_funds']['under'] = count($result['mismatched_funds']['user']['under']);
-        
-        return response()->json($result);
     }
 }

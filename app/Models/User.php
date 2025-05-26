@@ -82,4 +82,8 @@ class User extends Authenticatable
     public function referredBy(){
         return $this->belongsTo(User::class, 'refer_by');
     }
+
+    public function leaderboard(){
+        return $this->hasOne(leaderboard::class);
+    }
 }
