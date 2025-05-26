@@ -35,6 +35,7 @@ Route::prefix('quiz')->group(function(){
     Route::get('/contest', [QuizController::class, 'listVariant']);
     Route::middleware('auth:sanctum')->get('/responses/list', [QuizController::class, 'responseList']);
     Route::middleware('auth:sanctum')->post('/leaderboard', [QuizController::class, 'leaderboard']);
+    Route::middleware('auth:sanctum')->post('/user/answerKey', [QuizController::class, 'showAnswerKey']);
 });
 
 Route::middleware(['auth:sanctum','isAdmin'])->prefix('admin')->group(function(){
