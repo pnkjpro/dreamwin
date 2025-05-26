@@ -153,14 +153,62 @@ class UserController extends Controller
         ], "User details is found", 200);
     }
 
-    public function userList(Request $request){
+    public function userList(Request $request)
+    {
         $page = $request->input('page', 1);
         $limit = Config::get('himpri.constant.adminPaginationLimit'); 
         $offset = ($page - 1) * $limit; 
-        $usersQuery = User::with('referredBy:id,refer_code')->orderByDesc('id');
+        
+        // Start building the query with relationships
+        $usersQuery = User::with([
+            'referredBy:id,refer_code',
+            'referredUsers:id,name,email,refer_code,refer_by'
+        ])->orderByDesc('id');
+        
+        // Apply search filters
+        if ($request->filled('name')) {
+            $usersQuery->where('name', 'LIKE', '%' . $request->input('name') . '%');
+        }
+        
+        if ($request->filled('email')) {
+            $usersQuery->where('email', 'LIKE', '%' . $request->input('email') . '%');
+        }
+        
+        if ($request->filled('mobile')) {
+            $usersQuery->where('mobile', 'LIKE', '%' . $request->input('mobile') . '%');
+        }
+        
+        if ($request->filled('upi_id')) {
+            $usersQuery->where('upi_id', 'LIKE', '%' . $request->input('upi_id') . '%');
+        }
+        
+        // Apply verification status filter
+        if ($request->filled('verified_status')) {
+            $verifiedStatus = $request->input('verified_status');
+            if ($verifiedStatus === 'verified') {
+                $usersQuery->whereNotNull('email_verified_at');
+            } elseif ($verifiedStatus === 'not_verified') {
+                $usersQuery->whereNull('email_verified_at');
+            }
+        }
+        
+        // Apply date range filters
+        if ($request->filled('start_date')) {
+            $usersQuery->whereDate('created_at', '>=', $request->input('start_date'));
+        }
+        
+        if ($request->filled('end_date')) {
+            $usersQuery->whereDate('created_at', '<=', $request->input('end_date'));
+        }
+        
+        // Get total count after applying filters
         $totalCount = $usersQuery->count();
+        
+        // Get paginated results
         $users = $usersQuery->limit($limit)->offset($offset)->get();
-        $users = $users->map(function($user){
+        
+        // Map the users data
+        $users = $users->map(function($user) {
             return [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -171,12 +219,34 @@ class UserController extends Controller
                 'funds' => $user->funds,
                 'refer_code' => $user->refer_code,
                 'referred_by_code' => $user->referredBy?->refer_code,
+                'created_at' => $user->created_at,
+                'referred_users' => $user->referredUsers->map(function($refUser) {
+                    return [
+                        'id' => $refUser->id,
+                        'name' => $refUser->name,
+                        'email' => $refUser->email,
+                        'refer_code' => $refUser->refer_code,
+                    ];
+                }),
             ];
         });
+        
+        // Calculate pagination info
+        $hasMore = ($offset + $limit) < $totalCount;
+        $currentPage = $page;
+        $totalPages = ceil($totalCount / $limit);
+        
         return $this->successResponse([
             'totalCount' => $totalCount,
-            'users' => $users
-        ], "Users has been fetched", 200);
+            'users' => $users,
+            'pagination' => [
+                'current_page' => $currentPage,
+                'total_pages' => $totalPages,
+                'has_more' => $hasMore,
+                'per_page' => $limit,
+                'total' => $totalCount
+            ]
+        ], "Users have been fetched", 200);
     }
 
     public function fetchUser(Request $request){
