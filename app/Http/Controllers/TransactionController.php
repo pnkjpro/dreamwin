@@ -38,6 +38,7 @@ class TransactionController extends Controller
         if($isPendingWithdrawalExists){
             return $this->errorResponse([], "You already have a pending withdrawal request!");
         }
+        DB::beginTransaction();
         try {
             $transaction = FundTransaction::create([
                 'user_id' => $user->id,
@@ -50,11 +51,18 @@ class TransactionController extends Controller
             if($data['action'] == 'deposit'){
                 $message = "Payment of ₹{$data['amount']} has been registered. Funds will be credited within 3 hours.";
             }else if($data['action'] == 'withdraw'){
+                if ($user->funds >= $data['amount']) {
+                    $user->decrement('funds', $data['amount']);
+                } else {
+                    DB::rollBack();
+                    return $this->errorResponse([], 'Insufficient funds for withdrawal', 422);
+                }
                 $message = "Withdrawal request for ₹{$data['amount']} has been submitted";
             }
-    
+            DB::commit();
             return $this->successResponse($transaction, $message, 201);
-        } catch(Exception $e){
+        } catch(\Exception $e){
+            DB::rollBack();
             return $this->exceptionHandler($e, $e->getMessage(), 500);
         }
     }
@@ -83,13 +91,10 @@ class TransactionController extends Controller
             if ($data['change_approval'] == 'approved') {
                 if ($transaction->action == 'deposit') {
                     $user->increment('funds', $amount);
-                } elseif ($transaction->action == 'withdraw') {
-                    if ($user->funds >= $amount) {
-                        $user->decrement('funds', $amount);
-                    } else {
-                        DB::rollBack();
-                        return $this->errorResponse([], 'Insufficient funds for withdrawal', 422);
-                    }
+                }
+            } else if($data['change_approval'] == 'rejected') {
+                if ($transaction->action == 'withdraw') {
+                    $user->increment('funds', $amount);
                 }
             }
 
@@ -99,9 +104,6 @@ class TransactionController extends Controller
             DB::rollBack();
             return $this->exceptionHandler($e, $e->getMessage(), 500);
         }
-
-
-        return $this->successResponse($transaction, "Transaction has been {$data['change_approval']}", 201);
     }
 
     public function listAllTransactions(Request $request){
