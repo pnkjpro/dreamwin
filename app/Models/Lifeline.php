@@ -10,4 +10,8 @@ class Lifeline extends Model
         'name', 'alias', 'description', 'cost', 'icon', 'icon_color',
         'is_active', 'cooldown_period', 'effect_description'
     ];
+
+    public function lifeline_usage(){
+        return $this->hasOne(LifelineUsage::class);
+    }
 }

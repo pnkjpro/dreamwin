@@ -9,6 +9,7 @@ use App\Models\Quiz;
 use App\Models\QuizVariant;
 use App\Models\User;
 use App\Models\UserResponse;
+use App\Models\LifelineUsage;
 use App\Models\Leaderboard;
 use App\Models\FundTransaction;
 use Illuminate\Support\Facades\Auth;
@@ -302,6 +303,7 @@ class QuizController extends Controller
 
     public function showAnswerKey(Request $request)
     {
+        // Validate input
         $validator = Validator::make($request->all(), [
             'node_id' => 'required|exists:user_responses,node_id'
         ]);
@@ -313,20 +315,63 @@ class QuizController extends Controller
         $data = $validator->validated();
         $nodeId = $data['node_id'];
         $userId = Auth::user()->id;
-        $quiz = Quiz::where('node_id', $nodeId)->first();
-        $query = UserResponse::where('node_id', $nodeId);
-        $userQuery = $query->where('user_id', $userId)->select('score', 'responseContents')->first();
-        $userPoints = $userQuery->score;
 
-        $quizAnswerSheet = collect($quiz->quizContents)->keyBy('id');
-        $userAnswers = $userQuery->responseContents;
+        // Fetch the quiz
+        $quiz = Quiz::where('node_id', $nodeId)->first();
+        if (!$quiz) {
+            return $this->errorResponse([], 'Quiz not found for this node.', 404);
+        }
+
+        // Fetch user response
+        $userResponse = UserResponse::where('node_id', $nodeId)
+                            ->where('user_id', $userId)
+                            ->select('id', 'score', 'responseContents')
+                            ->first();
+
+        if (!$userResponse) {
+            return $this->errorResponse([], 'User has not submitted a response for this quiz.', 404);
+        }
+
+        // Get lifeline usage, keyed by question_id
+        $lifelineUsage = LifelineUsage::with('lifeline')
+                            ->where('user_response_id', $userResponse->id)
+                            ->where('user_id', $userId)
+                            ->get()
+                            ->keyBy('question_id');
+
+        // Ensure casting is properly done
+        $quizAnswerSheet = collect($quiz->quizContents ?? [])->keyBy('id');
+        $userAnswers = $userResponse->responseContents ?? [];
+
         $answerKey = [];
-        foreach($userAnswers as $answer){
-            $answerKey[$answer['question_id']]['question'] = $quizAnswerSheet[$answer['question_id']]['question'];
-            $answerKey[$answer['question_id']]['options'] = $quizAnswerSheet[$answer['question_id']]['options'];
-            $answerKey[$answer['question_id']]['user_answer_id'] = $answer['answer_id'];
-            $answerKey[$answer['question_id']]['correct_answer_id'] = $quizAnswerSheet[$answer['question_id']]['correctAnswerId'];
-            $answerKey[$answer['question_id']]['is_correct'] = $answer['is_correct'];
+
+        foreach ($userAnswers as $answer) {
+            $questionId = $answer['question_id'] ?? null;
+
+            // Skip invalid or missing question ID
+            if (!$questionId || !isset($quizAnswerSheet[$questionId])) {
+                continue;
+            }
+
+            $quizQuestion = $quizAnswerSheet[$questionId];
+            $lifelineUsed = isset($lifelineUsage[$questionId]);
+            $lifelineType = $lifelineUsed ? ($lifelineUsage[$questionId]['lifeline']['name'] ?? null) : null;
+
+            $answerKey[$questionId] = [
+                'question' => $quizQuestion['question'] ?? null,
+                'options' => $quizQuestion['options'] ?? [],
+                'lifeline_used' => $lifelineUsed,
+                'lifeline_type' => $lifelineType,
+                'user_answer_id' => null,
+                'correct_answer_id' => null,
+                'is_correct' => null,
+            ];
+
+            if (!$lifelineUsed || $lifelineType !== 'Skip Question') {
+                $answerKey[$questionId]['user_answer_id'] = $answer['answer_id'] ?? null;
+                $answerKey[$questionId]['correct_answer_id'] = $quizQuestion['correctAnswerId'] ?? null;
+                $answerKey[$questionId]['is_correct'] = $answer['is_correct'] ?? null;
+            }
         }
         return $this->successResponse($answerKey, "User Response has been fetched Successfully!", 200);
     }

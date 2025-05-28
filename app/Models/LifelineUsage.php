@@ -21,4 +21,8 @@ class LifelineUsage extends Model
     public function user_response(){
         return $this->belongsTo(UserResponse::class);
     }
+
+    public function lifeline(){
+        return $this->belongsTo(Lifeline::class);
+    }
 }
