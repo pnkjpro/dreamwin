@@ -492,7 +492,29 @@ class QuizController extends Controller
 
     public function quizByNodeId(Request $request){
         $nodeId = $request->node_id;
-        $quiz = Quiz::with('user_responses.user')->where('node_id', $nodeId)->first();
-        return $this->successResponse($quiz, "Record has been founded!", 200);
+        $quiz = Quiz::with([
+            'user_responses.user',
+            'user_responses.lifeline_usages.lifeline'
+        ])->where('node_id', $nodeId)->first();
+
+        $quiz->user_responses->transform(function ($userResponse){
+            $lifelineMap = $userResponse->lifeline_usages->keyBy('question_id');
+
+            $userResponse->responseContents = collect($userResponse->responseContents)->map(function ($response) use($lifelineMap){
+                $questionId = $response['question_id'];
+
+                $lifeline = $lifelineMap->get($questionId);
+
+                $response['lifeline_used'] = $lifeline ? [
+                    'name' => $lifeline->lifeline->name
+                ] : null;
+
+                return $response;
+            })->toArray();
+
+            return $userResponse;
+        });
+
+        return $this->successResponse($quiz, "Record has been fetched!", 200);
     }
 }
