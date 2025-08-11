@@ -61,6 +61,12 @@ Route::middleware(['auth:sanctum','isAdmin'])->prefix('admin')->group(function()
     Route::delete('variables/{name}', [VariableController::class, 'destroy']);
 
 });
+Route::prefix('featured')->group(function(){
+    Route::get('/videos', [HomeController::class, 'listFeaturedVideos']);
+    Route::middleware(['auth:sanctum', 'isAdmin'])->post('/video/update', [HomeController::class, 'updateFeaturedVideo']);
+    Route::middleware(['auth:sanctum', 'isAdmin'])->post('/video/create', [HomeController::class, 'createFeaturedVideo']);
+    Route::middleware(['auth:sanctum', 'isAdmin'])->post('/video/delete', [HomeController::class, 'deleteFeaturedVideo']);
+});
 
 Route::prefix('bot')->group(function(){
     Route::post('/create', [BotController::class, 'createBot']);
