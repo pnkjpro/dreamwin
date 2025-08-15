@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ExpertVideo;
 use App\Models\User;
 use App\Models\Variable;
 use App\Models\HowVideos;
@@ -65,7 +66,10 @@ class HomeController extends Controller
     }
 
     public function listFeaturedVideos(){
-        $videos = FeaturedVideo::where('is_active', true)->get();
+        $videos = FeaturedVideo::where('is_active', true)
+                                ->where('is_featured', true)
+                                ->where('is_premium', false)
+                                ->get();
         return $this->successResponse($videos, 'Featured videos fetched successfully!', 200);
     }
 
@@ -122,7 +126,7 @@ class HomeController extends Controller
             'duration' => $data['duration'] ?? null,
             'views' => $data['views'] ?? null,
             'is_active' => true,
-            'is_featured' => false,
+            'is_featured' => true,
             'is_premium' => false
         ]);
 

@@ -8,6 +8,7 @@ use App\Http\Controllers\LifelineUsageController;
 use App\Http\Controllers\PlayQuizController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\ExpertVideoController;
 use App\Http\Controllers\QueryController;
 use App\Http\Controllers\VariableController;
 use App\Http\Controllers\BotController;
@@ -61,11 +62,20 @@ Route::middleware(['auth:sanctum','isAdmin'])->prefix('admin')->group(function()
     Route::delete('variables/{name}', [VariableController::class, 'destroy']);
 
 });
-Route::prefix('featured')->group(function(){
+Route::middleware('auth:sanctum')->prefix('featured')->group(function(){
     Route::get('/videos', [HomeController::class, 'listFeaturedVideos']);
-    Route::middleware(['auth:sanctum', 'isAdmin'])->post('/video/update', [HomeController::class, 'updateFeaturedVideo']);
-    Route::middleware(['auth:sanctum', 'isAdmin'])->post('/video/create', [HomeController::class, 'createFeaturedVideo']);
-    Route::middleware(['auth:sanctum', 'isAdmin'])->post('/video/delete', [HomeController::class, 'deleteFeaturedVideo']);
+    Route::middleware('isAdmin')->post('/video/update', [HomeController::class, 'updateFeaturedVideo']);
+    Route::middleware('isAdmin')->post('/video/create', [HomeController::class, 'createFeaturedVideo']);
+    Route::middleware('isAdmin')->post('/video/delete', [HomeController::class, 'deleteFeaturedVideo']);
+});
+
+Route::middleware('auth:sanctum')->prefix('expert')->group(function(){
+    Route::get('/videos', [ExpertVideoController::class, 'listExpertVideos']);
+    Route::middleware('isAdmin')->post('/video/update', [ExpertVideoController::class, 'updateExpertVideo']);
+    Route::middleware('isAdmin')->post('/video/create', [ExpertVideoController::class, 'createExpertVideo']);
+    Route::middleware('isAdmin')->post('/video/delete', [ExpertVideoController::class, 'deleteExpertVideo']);
+    Route::post('/video/purchase', [ExpertVideoController::class, 'purchaseExpertVideo']);
+    Route::get('/video/list', [ExpertVideoController::class, 'listUserExpertVideos']);
 });
 
 Route::prefix('bot')->group(function(){

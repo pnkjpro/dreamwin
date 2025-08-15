@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('fund_transactions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->enum('action', ['deposit', 'withdraw', 'referred_reward', 'quiz_reward']);
+            $table->enum('action', ['deposit', 'withdraw', 'referred_reward', 'quiz_reward', 'expert_video_purchase']);
             $table->integer('amount')->default(0);
             $table->string('razorpay_order_id')->nullable();
             $table->string('transaction_id')->nullable();
