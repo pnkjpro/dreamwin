@@ -33,7 +33,8 @@ class ExpertVideoController extends Controller
                 'views' => $video->views,
                 'is_active' => $video->is_active,
                 'is_featured' => $video->is_featured,
-                'is_premium' => $video->is_premium
+                'is_premium' => $video->is_premium,
+                'created_at' => $video->created_at
             ];
         });
         return $this->successResponse($videos, 'Expert videos fetched successfully!', 200);
@@ -77,38 +78,62 @@ class ExpertVideoController extends Controller
         return $this->successResponse([], 'Expert video created successfully!', 200);
     }
 
-    public function updateExpertVideo(Request $request){
+    public function updateExpertVideo(Request $request)
+    {
         $validator = Validator::make($request->all(), [
-            'video_id' => 'required|exists:expert_videos,id',
-            'title' => 'required|string|max:255',
-            'description' => 'required|string|max:225',
-            'videoUrl' => 'required|string|max:255',
-            'thumbnail' => 'nullable|string|max:255',
-            'duration' => 'nullable|string|max:10'
+            'video_id'    => 'required|exists:expert_videos,id',
+            'title'       => 'sometimes|string|max:255',
+            'description' => 'sometimes|string|max:225',
+            'thumbnail'   => 'sometimes|file|image|max:2048', // 2MB
+            'duration'    => 'sometimes|string|max:10'
         ]);
+
         if ($validator->fails()) {
             return $this->errorResponse([], $validator->errors(), 422);
         }
 
-        $data = $validator->validated();
+        $data  = $validator->validated();
         $video = ExpertVideo::findOrFail($data['video_id']);
-        $video->update([
-            'title' => $data['title'],
-            'description' => $data['description'],
-            'videoUrl' => $data['videoUrl'],
-            'thumbnail' => $data['thumbnail'] ?? null,
-            'duration' => $data['duration'] ?? null,
-            'is_active' => true,
-            'is_featured' => false,
-            'is_premium' => true
-        ]);
+
+        // Prepare update data only for provided fields
+        $updateData = [];
+
+        if (array_key_exists('title', $data)) {
+            $updateData['title'] = $data['title'];
+        }
+
+        if (array_key_exists('description', $data)) {
+            $updateData['description'] = $data['description'];
+        }
+
+        if (array_key_exists('duration', $data)) {
+            $updateData['duration'] = $data['duration'];
+        }
+
+        // Handle thumbnail if provided
+        if ($request->hasFile('thumbnail') && $request->file('thumbnail')->isValid()) {
+            // Delete old thumbnail if exists
+            if ($video->thumbnail) {
+                Storage::disk('public')->delete($video->thumbnail);
+            }
+
+            $thumbnailPath           = $request->file('thumbnail')->store('expert_videos/thumbnails', 'public');
+            $updateData['thumbnail'] = $thumbnailPath;
+        }
+
+        // Optional: always update these if needed (business logic)
+        $updateData['is_active']   = true;
+        $updateData['is_featured'] = false;
+        $updateData['is_premium']  = true;
+
+        $video->update($updateData);
 
         return $this->successResponse([], 'Expert video updated successfully!', 200);
     }
 
     public function deleteExpertVideo(Request $request){
         $validator = Validator::make($request->all(), [
-            'video_id' => 'required|exists:expert_videos,id'
+            'video_id' => 'required|exists:expert_videos,id',
         ]);
         if ($validator->fails()) {
             return $this->errorResponse([], $validator->errors(), 422);
@@ -116,9 +141,18 @@ class ExpertVideoController extends Controller
 
         $data = $validator->validated();
         $video = ExpertVideo::findOrFail($data['video_id']);
-        // delete video and thumbnail from storage
-        Storage::disk('public')->delete($video->videoUrl);
-        Storage::disk('public')->delete($video->thumbnail);
+        // delete video and thumbnail from storage (be defensive against null paths)
+        // prefer the DB column name video_url, but also check possible camelCase attribute
+        $videoPath = $video->video_url ?? $video->videoUrl ?? null;
+        $thumbnailPath = $video->thumbnail ?? null;
+
+        if (!empty($videoPath)) {
+            Storage::disk('public')->delete($videoPath);
+        }
+
+        if (!empty($thumbnailPath)) {
+            Storage::disk('public')->delete($thumbnailPath);
+        }
 
         // Soft delete the video by marking it as deleted
         $video->update(['is_deleted' => true]);

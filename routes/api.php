@@ -70,7 +70,7 @@ Route::middleware('auth:sanctum')->prefix('featured')->group(function(){
 });
 
 Route::middleware('auth:sanctum')->prefix('expert')->group(function(){
-    Route::get('/videos', [ExpertVideoController::class, 'listExpertVideos']);
+    Route::middleware('isAdmin')->get('/videos', [ExpertVideoController::class, 'listExpertVideos']);
     Route::middleware('isAdmin')->post('/video/update', [ExpertVideoController::class, 'updateExpertVideo']);
     Route::middleware('isAdmin')->post('/video/create', [ExpertVideoController::class, 'createExpertVideo']);
     Route::middleware('isAdmin')->post('/video/delete', [ExpertVideoController::class, 'deleteExpertVideo']);
