@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\QuizController;
+use App\Http\Controllers\WinnerController;
 use App\Http\Controllers\LifelineController;
 use App\Http\Controllers\LifelineUsageController;
 use App\Http\Controllers\PlayQuizController;
@@ -60,6 +61,14 @@ Route::middleware(['auth:sanctum','isAdmin'])->prefix('admin')->group(function()
     Route::get('variables/{name}', [VariableController::class, 'show']);
     Route::post('variables/update', [VariableController::class, 'update']);
     Route::delete('variables/{name}', [VariableController::class, 'destroy']);
+
+    Route::prefix('winner')->group(function(){
+        Route::get('/', [WinnerController::class, 'index']);
+        Route::post('/', [WinnerController::class, 'store']);
+        Route::get('/{id}', [WinnerController::class, 'show']);
+        Route::put('/{id}', [WinnerController::class, 'update']);
+        Route::delete('/{id}', [WinnerController::class, 'destroy']);
+    });
 
 });
 Route::middleware('auth:sanctum')->prefix('featured')->group(function(){
@@ -124,6 +133,7 @@ Route::middleware('auth:sanctum')->prefix('play')->group(function(){
 
 Route::get('banner/list', [HomeController::class, 'listBanner']);
 Route::get('how/videos', [HomeController::class, 'listHowVideos']);
+Route::get('/recent/winners', [HomeController::class, 'listRecentWinners']);
 
 Route::middleware('auth:sanctum')->prefix('razorpay')->group(function(){
     Route::post('/order/create', [RazorpayController::class, 'createOrder']);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ExpertVideo;
 use App\Models\User;
+use App\Models\UserResponse;
 use App\Models\Variable;
 use App\Models\HowVideos;
 use App\Models\HomeBanner;
@@ -173,5 +174,25 @@ class HomeController extends Controller
     public function listHowVideos(){
         $videos = HowVideos::all();
         return $this->successResponse($videos, 'videos has been fetched', 200);
+    }
+
+    public function listRecentWinners(){
+        $userIds = FundTransaction::where('approved_status', 'approved')
+                                        ->where('reference_type', UserResponse::class)
+                                        ->where('action', 'deposit')
+                                        ->where('amount', '>', 0)
+                                        ->limit(3)
+                                        ->pluck('amount','user_id')->toArray();
+        $users = User::whereIn('id', array_keys($userIds))->get();
+        $users = $users->map(function($user) use ($userIds) {
+            return [
+                'id' => $user->id,
+                'name' => $user->name,
+                'amount' => $userIds[$user->id] ?? 0,
+                'date' => $user->created_at->format('Y-m-d H:i:s'),
+                'avatar' => ($user->avatar) ? asset('storage' . $user->avatar) : null,
+            ];
+        });
+        return $this->successResponse($users, 'Recent winners have been fetched', 200);
     }
 }
