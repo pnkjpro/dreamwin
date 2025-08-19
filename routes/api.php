@@ -64,10 +64,10 @@ Route::middleware(['auth:sanctum','isAdmin'])->prefix('admin')->group(function()
 
     Route::prefix('winner')->group(function(){
         Route::get('/', [WinnerController::class, 'index']);
-        Route::post('/', [WinnerController::class, 'store']);
+        Route::post('/add', [WinnerController::class, 'store']);
         Route::get('/{id}', [WinnerController::class, 'show']);
-        Route::put('/{id}', [WinnerController::class, 'update']);
-        Route::delete('/{id}', [WinnerController::class, 'destroy']);
+        Route::post('/update/{id}', [WinnerController::class, 'update']);
+        Route::delete('/delete/{id}', [WinnerController::class, 'destroy']);
     });
 
 });
@@ -133,7 +133,7 @@ Route::middleware('auth:sanctum')->prefix('play')->group(function(){
 
 Route::get('banner/list', [HomeController::class, 'listBanner']);
 Route::get('how/videos', [HomeController::class, 'listHowVideos']);
-Route::get('/recent/winners', [HomeController::class, 'listRecentWinners']);
+Route::get('/recent/winners', [WinnerController::class, 'listRecentWinners']);
 
 Route::middleware('auth:sanctum')->prefix('razorpay')->group(function(){
     Route::post('/order/create', [RazorpayController::class, 'createOrder']);
