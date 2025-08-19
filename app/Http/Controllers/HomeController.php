@@ -62,6 +62,7 @@ class HomeController extends Controller
         return $this->successResponse([
             'banners' => $banners,
             'official_notice' => $official_notice['value']['official_notice'],
+            'notice_updated_at' => $official_notice['updated_at'],
             'official_notice_status' => Config::get('himpri.constant.official_notice_status'),
         ], "banners has been fetched!", 200);
     }
