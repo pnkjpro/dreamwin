@@ -10,6 +10,7 @@ class ExpertVideo extends Model
         'title',
         'description',
         'videoUrl',
+        'pdfUrl',
         'price',
         'thumbnail',
         'duration',

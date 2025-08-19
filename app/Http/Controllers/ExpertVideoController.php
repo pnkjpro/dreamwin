@@ -27,8 +27,9 @@ class ExpertVideoController extends Controller
                 'id' => $video->id,
                 'title' => $video->title,
                 'description' => $video->description,
-                'videoUrl' => asset('storage/' . $video->video_url),
+                'videoUrl' => asset('storage/' . $video->videoUrl),
                 'thumbnail' => asset('storage/' . $video->thumbnail),
+                'pdf_attachment' => $video->pdfUrl ? asset('storage/' . $video->pdfUrl) : null,
                 'duration' => $video->duration,
                 'views' => $video->views,
                 'is_active' => $video->is_active,
@@ -46,6 +47,7 @@ class ExpertVideoController extends Controller
             'description' => 'required|string|max:225',
             'video' => 'required|file|mimes:mp4,mov,avi|max:512000', // 500MB
             'thumbnail' => 'nullable|file|image|max:2048', // 2MB max
+            'pdf_attachment' => 'nullable|file|mimes:pdf|max:2048', // 2MB max
             'duration' => 'nullable|string|max:10'
         ]);
         if ($validator->fails()) {
@@ -62,6 +64,11 @@ class ExpertVideoController extends Controller
             $data['thumbnail'] = $thumbnailPath;
         } else {
             $data['thumbnail'] = null; // Set to null if no thumbnail is provided
+        }
+
+        if ($request->hasFile('pdf_attachment') && $request->file('pdf_attachment')->isValid()) {
+            $pdfPath = $request->file('pdf_attachment')->store('expert_videos/pdfs', 'public');
+            $data['pdfUrl'] = $pdfPath;
         }
 
         ExpertVideo::create([
@@ -85,6 +92,7 @@ class ExpertVideoController extends Controller
             'title'       => 'sometimes|string|max:255',
             'description' => 'sometimes|string|max:225',
             'thumbnail'   => 'sometimes|file|image|max:2048', // 2MB
+            'pdf_attachment' => 'sometimes|file|mimes:pdf|max:2048', // 2MB
             'duration'    => 'sometimes|string|max:10'
         ]);
 
@@ -119,6 +127,17 @@ class ExpertVideoController extends Controller
 
             $thumbnailPath           = $request->file('thumbnail')->store('expert_videos/thumbnails', 'public');
             $updateData['thumbnail'] = $thumbnailPath;
+        }
+
+        // handle pdf if provided
+        if ($request->hasFile('pdf_attachment') && $request->file('pdf_attachment')->isValid()) {
+            // Delete old pdf if exists
+            if ($video->pdfUrl) {
+                Storage::disk('public')->delete($video->pdfUrl);
+            }
+
+            $pdfPath = $request->file('pdf_attachment')->store('expert_videos/pdfs', 'public');
+            $updateData['pdfUrl'] = $pdfPath;
         }
 
         // Optional: always update these if needed (business logic)
@@ -221,6 +240,7 @@ class ExpertVideoController extends Controller
                 'title' => $video->title,
                 'description' => $video->description,
                 'videoUrl' => asset('storage/' . $video->videoUrl),
+                'pdfUrl' => $video->pdfUrl ? asset('storage/' . $video->pdfUrl) : null,
                 'thumbnail' => asset('storage/' . $video->thumbnail),
                 'duration' => $video->duration,
                 'price' => $video->price,
