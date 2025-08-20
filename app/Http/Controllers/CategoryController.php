@@ -17,6 +17,10 @@ class CategoryController extends Controller
     public function index()
     {
         $categories = Category::where('is_active', true)->orderBy('display_order')->get();
+        $categories = $categories->transform(function ($category) {
+            $category->icon = $category->icon ? asset('storage/' . $category->icon) : null;
+            return $category;
+        });
         return $this->successResponse($categories, "Record has been founded", 200);
     }
 

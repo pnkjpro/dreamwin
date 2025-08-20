@@ -50,11 +50,11 @@ Route::middleware(['auth:sanctum','isAdmin'])->prefix('admin')->group(function()
 
     Route::prefix('/category')->group(function () {
         Route::post('/create', [CategoryController::class, 'store']);
-        Route::post('/update/{categoryId}', [CategoryController::class, 'update']);
-        Route::delete('/delete/{categoryId}', [CategoryController::class, 'destroy']);
+        Route::post('/update/{category}', [CategoryController::class, 'update']);
+        Route::delete('/delete/{category}', [CategoryController::class, 'destroy']);
         Route::post('/update-order', [CategoryController::class, 'updateSorting']);
     });
-    
+
     Route::post('/howVideos/update', [HomeController::class, 'updateHowVideos']);
     Route::get('/list/leaderboards', [QuizController::class, 'listAdminLeaderboard']);
     Route::post('/show/leaderboard', [QuizController::class, 'showAdminLeaderboard']);
