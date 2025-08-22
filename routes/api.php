@@ -3,11 +3,13 @@
 use Illuminate\Http\Request;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\QuizController;
+use App\Http\Controllers\WinnerController;
 use App\Http\Controllers\LifelineController;
 use App\Http\Controllers\LifelineUsageController;
 use App\Http\Controllers\PlayQuizController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\ExpertVideoController;
 use App\Http\Controllers\QueryController;
 use App\Http\Controllers\VariableController;
 use App\Http\Controllers\BotController;
@@ -45,8 +47,14 @@ Route::middleware(['auth:sanctum','isAdmin'])->prefix('admin')->group(function()
     Route::get('/transaction/list/all', [TransactionController::class, 'listAllTransactions']);
     Route::post('/banner/update', [HomeController::class, 'updateBanner']);
     Route::post('/lifeline/update', [LifelineController::class, 'updateLifeline']);
-    Route::post('/category/create', [CategoryController::class, 'store']);
-    Route::post('/categories/update-order', [CategoryController::class, 'updateSorting']);
+
+    Route::prefix('/category')->group(function () {
+        Route::post('/create', [CategoryController::class, 'store']);
+        Route::post('/update/{category}', [CategoryController::class, 'update']);
+        Route::delete('/delete/{category}', [CategoryController::class, 'destroy']);
+        Route::post('/update-order', [CategoryController::class, 'updateSorting']);
+    });
+
     Route::post('/howVideos/update', [HomeController::class, 'updateHowVideos']);
     Route::get('/list/leaderboards', [QuizController::class, 'listAdminLeaderboard']);
     Route::post('/show/leaderboard', [QuizController::class, 'showAdminLeaderboard']);
@@ -60,6 +68,29 @@ Route::middleware(['auth:sanctum','isAdmin'])->prefix('admin')->group(function()
     Route::post('variables/update', [VariableController::class, 'update']);
     Route::delete('variables/{name}', [VariableController::class, 'destroy']);
 
+    Route::prefix('winner')->group(function(){
+        Route::get('/', [WinnerController::class, 'index']);
+        Route::post('/add', [WinnerController::class, 'store']);
+        Route::get('/{id}', [WinnerController::class, 'show']);
+        Route::post('/update/{id}', [WinnerController::class, 'update']);
+        Route::delete('/delete/{id}', [WinnerController::class, 'destroy']);
+    });
+
+});
+Route::middleware('auth:sanctum')->prefix('featured')->group(function(){
+    Route::get('/videos', [HomeController::class, 'listFeaturedVideos']);
+    Route::middleware('isAdmin')->post('/video/update', [HomeController::class, 'updateFeaturedVideo']);
+    Route::middleware('isAdmin')->post('/video/create', [HomeController::class, 'createFeaturedVideo']);
+    Route::middleware('isAdmin')->post('/video/delete', [HomeController::class, 'deleteFeaturedVideo']);
+});
+
+Route::middleware('auth:sanctum')->prefix('expert')->group(function(){
+    Route::middleware('isAdmin')->get('/videos', [ExpertVideoController::class, 'listExpertVideos']);
+    Route::middleware('isAdmin')->post('/video/update', [ExpertVideoController::class, 'updateExpertVideo']);
+    Route::middleware('isAdmin')->post('/video/create', [ExpertVideoController::class, 'createExpertVideo']);
+    Route::middleware('isAdmin')->post('/video/delete', [ExpertVideoController::class, 'deleteExpertVideo']);
+    Route::post('/video/purchase', [ExpertVideoController::class, 'purchaseExpertVideo']);
+    Route::get('/video/list', [ExpertVideoController::class, 'listUserExpertVideos']);
 });
 
 Route::prefix('bot')->group(function(){
@@ -108,6 +139,7 @@ Route::middleware('auth:sanctum')->prefix('play')->group(function(){
 
 Route::get('banner/list', [HomeController::class, 'listBanner']);
 Route::get('how/videos', [HomeController::class, 'listHowVideos']);
+Route::get('/recent/winners', [WinnerController::class, 'listRecentWinners']);
 
 Route::middleware('auth:sanctum')->prefix('razorpay')->group(function(){
     Route::post('/order/create', [RazorpayController::class, 'createOrder']);

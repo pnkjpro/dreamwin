@@ -1,0 +1,112 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Traits\JsonResponseTrait;
+use Illuminate\Http\Request;
+use App\Models\Winner;
+use Illuminate\Support\Facades\Validator;
+
+
+class WinnerController extends Controller
+{
+    use JsonResponseTrait;
+    public function index()
+    {
+        $winners = Winner::limit(3)->get();
+        $winners->transform(function ($winner) {
+            $winner->uid = $winner->id;
+            $winner->avatar = $winner->avatar ? asset('storage/' . $winner->avatar) : null;
+            $winner->date = $winner->created_at->format('Y-m-d H:i:s');
+            return $winner;
+        });
+        return $this->successResponse($winners, 'Winners retrieved successfully', 200);
+    }
+
+    public function store(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+           'name' => 'required|string|max:255',
+           'amount' => 'required|numeric|min:0',
+           'contest' => 'required|string|max:255',
+           'avatar' => 'required|file|image|max:2048'
+        ]);
+
+        if ($validator->fails()) {
+            return $this->errorResponse([], $validator->errors(), 422);
+        }
+
+        $data = $validator->validated();
+
+        //handle image
+        if ($request->hasFile('avatar')) {
+            $data['avatar'] = $request->file('avatar')->store('winners/avatars', 'public');
+        }
+
+        $winner = Winner::create($data);
+        return $this->successResponse($winner, 'Winner created successfully', 201);
+    }
+
+    public function show($id)
+    {
+        $winner = Winner::find($id);
+        if (!$winner) {
+            return $this->errorResponse('Winner not found', 404);
+        }
+        return $this->successResponse($winner, 'Winner retrieved successfully', 200);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $winner = Winner::find($id);
+        if (!$winner) {
+            return $this->errorResponse('Winner not found', 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'amount' => 'required|numeric|min:0',
+            'contest' => 'required|string|max:255',
+            'avatar' => 'nullable|file|image|max:2048',
+            'avatar_url' => 'nullable|string|max:255'
+        ]);
+        if ($validator->fails()) {
+            return $this->errorResponse([], $validator->errors(), 422);
+        }
+
+        $data = $validator->validated();
+        if ($request->hasFile('avatar')) {
+            if ($winner->avatar) {
+                \Storage::disk('public')->delete($winner->avatar);
+            }
+            $data['avatar'] = $request->file('avatar')->store('winners/avatars', 'public');
+        } else {
+            $data['avatar'] = $winner->avatar; // keep the old avatar if not provided
+        }
+        $winner->update($data);
+        return $this->successResponse($winner, 'Winner updated successfully', 200);
+    }
+
+    public function destroy($id)
+    {
+        $winner = Winner::find($id);
+        if (!$winner) {
+            return $this->errorResponse('Winner not found', 404);
+        }
+        if ($winner->avatar) {
+            \Storage::disk('public')->delete($winner->avatar);
+        }
+        $winner->delete();
+        return $this->successResponse([], 'Winner deleted successfully', 200);
+    }
+
+    public function listRecentWinners(){
+        $winners = Winner::limit(3)->get();
+        $winners->transform(function ($winner) {
+            $winner->avatar = $winner->avatar ? asset('storage/' . $winner->avatar) : null;
+            $winner->date = $winner->created_at->format('Y-m-d H:i:s');
+            return $winner;
+        });
+        return $this->successResponse($winners, 'Winners retrieved successfully', 200);
+    }
+}

@@ -2,20 +2,25 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Category;
 use App\Models\Quiz;
+use App\Models\Category;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Validator;
-
+use Illuminate\Http\Request;
 use App\Traits\JsonResponseTrait;
+
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class CategoryController extends Controller
 {
     use JsonResponseTrait;
     public function index()
     {
-        $categories = Category::orderBy('display_order')->get();
+        $categories = Category::where('is_active', true)->orderBy('display_order')->get();
+        $categories = $categories->transform(function ($category) {
+            $category->icon = $category->icon ? asset('storage/' . $category->icon) : null;
+            return $category;
+        });
         return $this->successResponse($categories, "Record has been founded", 200);
     }
 
@@ -111,37 +116,42 @@ class CategoryController extends Controller
 
     public function update(Request $request, Category $category)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'slug' => 'nullable|string|unique:categories,slug,' . $category->id,
-            'description' => 'nullable|string',
-            'icon' => 'nullable|string',
-            'icon_color' => 'nullable|string',
-            'banner_image' => 'nullable|string',
-            'is_active' => 'required|in:0,1',
-            'display_order' => 'required|integer',
+        $validator = Validator::make($request->all(), [
+            'name' => 'sometimes|string|max:255',
+            'description' => 'sometimes|string',
+            'icon' => 'sometimes|file|image|max:2048',
+            // 'icon_color' => 'nullable|string',
+            // 'banner_image' => 'nullable|file|image|max:2048'
         ]);
 
-        $slug = $request->slug ?: Str::slug($request->name);
-        if ($slug !== $category->slug) {
-            $originalSlug = $slug;
-            $count = 1;
-            while (Category::where('slug', $slug)->where('id', '!=', $category->id)->exists()) {
-                $slug = $originalSlug . '-' . $count;
-                $count++;
-            }
-        } else {
-            $slug = $category->slug;
+        if ($validator->fails()) {
+            return $this->errorResponse([], $validator->errors(), 422);
         }
 
-        $category->update(array_merge($request->all(), ['slug' => $slug]));
+        $data = $validator->validated();
+
+        // if icon is set delete existing
+        if (isset($data['icon'])) {
+            Storage::disk('public')->delete($category->icon);
+        }
+
+        // Handle file uploads with the slug as the filename
+        $iconPath = null;
+        if ($request->hasFile('icon') && $request->file('icon')->isValid()) {
+            $extension = $request->file('icon')->getClientOriginalExtension();
+            $filename = $category->slug . time() . '.' . $extension;
+            $iconPath = $request->file('icon')->storeAs('categories/icons', $filename, 'public');
+            $data['icon'] = $iconPath; // Update the data array with the new icon path
+        }
+
+        $category->update($data);
 
         return $this->successResponse($category, "Record has been updated", 200);
     }
 
     public function destroy(Category $category)
     {
-        $category->delete();
+        $category->update(['is_active' => false]);
         return $this->successResponse(null, "Record has been deleted", 200);
     }
 
