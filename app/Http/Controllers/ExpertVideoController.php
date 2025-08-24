@@ -27,6 +27,7 @@ class ExpertVideoController extends Controller
                 'id' => $video->id,
                 'title' => $video->title,
                 'description' => $video->description,
+                'price' => $video->price,
                 'videoUrl' => asset('storage/' . $video->videoUrl),
                 'thumbnail' => asset('storage/' . $video->thumbnail),
                 'pdf_attachment' => $video->pdfUrl ? asset('storage/' . $video->pdfUrl) : null,
@@ -45,6 +46,7 @@ class ExpertVideoController extends Controller
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
             'description' => 'required|string|max:225',
+            'price' => 'required|numeric|min:0',
             'video' => 'required|file|mimes:mp4,mov,avi|max:512000', // 500MB
             'thumbnail' => 'nullable|file|image|max:2048', // 2MB max
             'pdf_attachment' => 'nullable|file|mimes:pdf|max:2048', // 2MB max
@@ -74,6 +76,7 @@ class ExpertVideoController extends Controller
         ExpertVideo::create([
             'title' => $data['title'],
             'description' => $data['description'],
+            'price' => $data['price'],
             'videoUrl' => $data['videoUrl'],
             'thumbnail' => $data['thumbnail'] ?? null,
             'duration' => $data['duration'] ?? null,
@@ -91,6 +94,7 @@ class ExpertVideoController extends Controller
             'video_id'    => 'required|exists:expert_videos,id',
             'title'       => 'sometimes|string|max:255',
             'description' => 'sometimes|string|max:225',
+            'price'      => 'sometimes|numeric|min:0',
             'thumbnail'   => 'sometimes|file|image|max:2048', // 2MB
             'pdf_attachment' => 'sometimes|file|mimes:pdf|max:2048', // 2MB
             'duration'    => 'sometimes|string|max:10'
@@ -112,6 +116,10 @@ class ExpertVideoController extends Controller
 
         if (array_key_exists('description', $data)) {
             $updateData['description'] = $data['description'];
+        }
+
+        if (array_key_exists('price', $data)) {
+            $updateData['price'] = $data['price'];
         }
 
         if (array_key_exists('duration', $data)) {
